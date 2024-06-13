@@ -1,0 +1,8 @@
+market_front_addr: 180.168.146.187:10201
+trade_front_addr: 180.168.146.187:10201
+broker_id: "9999"
+investor_id: "123456"
+password: 'password'
+flowPath: ./flow.con
+is_using_udp: false
+is_multicast: false

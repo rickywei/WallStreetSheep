@@ -12,7 +12,7 @@
 *.pch
 
 # Compiled Dynamic libraries
-*.so
+# *.so
 *.dylib
 *.dll
 
@@ -23,10 +23,20 @@
 # Compiled Static libraries
 *.lai
 *.la
-*.a
+# *.a
 *.lib
 
 # Executables
 *.exe
 *.out
 *.app
+AlphaMaker
+
+# build
+build
+
+# VSCode
+.vscode
+
+# config
+config.yaml
