@@ -40,3 +40,6 @@ build
 
 # config
 config.yaml
+
+# con
+*.con

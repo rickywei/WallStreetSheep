@@ -1,29 +1,46 @@
 #include "alphamaker/market/market_ctp.hpp"
 
 #include <spdlog/spdlog.h>
+#include <yaml-cpp/yaml.h>
 
 #include <nlohmann/json.hpp>
 
 namespace am {
-bool MarketCtp::init() {
-  // _md_api->RegisterSpi(this);
+void MarketCtp::LoadConfig() {
+  YAML::Node config = YAML::LoadFile(_config_path);
+  YAML::Node market_config = config["market"];
+  spdlog::info("read config...\n{0}", YAML::Dump(market_config));
+  _front_addr = market_config["front_addr"].as<std::string>();
+  _broker_id = market_config["broker_id"].as<std::string>();
+  _investor_id = market_config["investor_id"].as<std::string>();
+  _password = market_config["password"].as<std::string>();
+  _flowPath = market_config["flow_path"].as<std::string>();
+  _is_using_udp = market_config["is_using_udp"].as<bool>();
+  _is_multicast = market_config["is_multicast"].as<bool>();
+}
+
+void MarketCtp::Init() {
+  spdlog::info("version={0}", _md_api->GetApiVersion());
+  _md_api = CThostFtdcMdApi::CreateFtdcMdApi(_flowPath.c_str(), _is_using_udp,
+                                             _is_multicast);
+  _md_api->RegisterSpi(this);
+}
+
+void MarketCtp::Connect() {
+  spdlog::info("connect");
   _md_api->RegisterFront(const_cast<char *>(_front_addr.c_str()));
   _md_api->Init();
-  _md_api->Join();
+  int ret = _md_api->Join();
 }
 
-void MarketCtp::release() { _md_api->Release(); }
-
-void MarketCtp::connect() {
-  if (int ret = Login(); ret != 0) {
-    spdlog::error("login failed...ret = {}", ret);
-    return;
-  }
+void MarketCtp::Disconnect() {
+  spdlog::info("Disconnect");
+  Connect();
 }
 
-void MarketCtp::disconnect() {}
+void MarketCtp::Subscribe() {
+  spdlog::info("subscribe");
 
-void MarketCtp::subscribe() {
   // TODO how to get all instrument ids
   char *ppInstrumentID[]{
       "au2408",
@@ -31,19 +48,26 @@ void MarketCtp::subscribe() {
   _md_api->SubscribeMarketData(ppInstrumentID, 1);
 }
 
-void MarketCtp::unsubscribe() {}
+void MarketCtp::Unsubscribe() {}
 
 void MarketCtp::OnFrontConnected() {
-  spdlog::info("OnFrontConnected...");
-  Login();
+  if (int ret = Login(); ret != 0) {
+    spdlog::error("login failed...ret = {}", ret);
+    return;
+  }
 }
 
-void MarketCtp::OnFrontDisconnected(int nReason) {}
+void MarketCtp::OnFrontDisconnected(int nReason) {
+  spdlog::info("OnFrontDisconnected...{0}", nReason);
+}
 
 void MarketCtp::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                                CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                                bool bIsLast) {
-  connect();
+  spdlog::info("OnRspUserLogin...code={0} msg={0}", pRspInfo->ErrorID,
+               pRspInfo->ErrorMsg);
+  if (pRspInfo->ErrorID != 0) return;
+  Subscribe();
 }
 
 void MarketCtp::OnHeartBeatWarning(int nTimeLapse) {}
@@ -80,36 +104,32 @@ void MarketCtp::OnRspUnSubForQuoteRsp(
 void MarketCtp::OnRtnDepthMarketData(
     CThostFtdcDepthMarketDataField *pDepthMarketData) {
   // using json = nlohmann::json;
-  // json j = json::parse(pDepthMarketData);
-  spdlog::info("xxxxx");
+  // json j = json::parse(*pDepthMarketData);
+
+  spdlog::info("{0}", pDepthMarketData->LastPrice);
 }
 
 void MarketCtp::OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp) {}
 
-MarketCtp::MarketCtp(std::string frontAddr, std::string brokerId,
-                     std::string investorId, std::string password,
-                     std::string flowPath, bool isUsingUdp, bool isMulticast)
-    : _front_addr{frontAddr},
-      _broker_id{brokerId},
-      _investor_id{investorId},
-      _password{password},
-      _flowPath{flowPath},
-      _is_using_udp{isUsingUdp},
-      _is_multicast{isMulticast},
-      _md_api{CThostFtdcMdApi::CreateFtdcMdApi(_flowPath.c_str(), _is_using_udp,
-                                               _is_multicast)} {
-  // TODO read config
-  init();
+MarketCtp::MarketCtp(std::string config_path) : Market(config_path) {
+  LoadConfig();
 }
 
-MarketCtp::~MarketCtp() { release(); }
+MarketCtp::~MarketCtp() { _md_api->Release(); }
 
 int MarketCtp::Login() {
+  spdlog::info("login");
+
   CThostFtdcReqUserLoginField req;
   memset(&req, 0, sizeof(req));
   strcpy(req.BrokerID, _broker_id.c_str());
   strcpy(req.UserID, _investor_id.c_str());
   strcpy(req.Password, _password.c_str());
+
+  spdlog::info("req.broker_id={0}", req.BrokerID);
+  spdlog::info("req.userid={0}", req.UserID);
+  spdlog::info("req.password={0}", req.Password);
+
   return _md_api->ReqUserLogin(&req, ++_requestId);
 }
 
