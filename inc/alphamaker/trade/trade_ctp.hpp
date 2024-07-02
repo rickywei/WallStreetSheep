@@ -54,6 +54,7 @@ class TradeCtp final : public Trade, public CThostFtdcTraderSpi {
   virtual ~TradeCtp();
   void ReqQrySettlementInfo();
   void ReqQryInvestorPosition();
+  void ReqQryInstrument();
 
  private:
   [[nodiscoard]] int Login();

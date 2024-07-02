@@ -6,7 +6,6 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-#include "alphamaker/trade/trade_ctp.hpp"
 #include "convert/codec.hpp"
 
 namespace am {
@@ -65,21 +64,33 @@ void TradeCtp::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
   spdlog::info("_trading_day={0}", _trading_day);
 
   // ReqQryInvestorPosition();
+  // ReqQrySettlementInfo();
 }
 void TradeCtp::OnRspSettlementInfoConfirm(
     CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm,
-    CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
+    CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+  spdlog::info("OnRspSettlementInfoConfirm code={0}", pRspInfo->ErrorID);
+}
 void TradeCtp::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument,
                                   CThostFtdcRspInfoField *pRspInfo,
-                                  int nRequestID, bool bIsLast) {}
+                                  int nRequestID, bool bIsLast) {
+  spdlog::info("onrspinstrument {0} ", bIsLast);
+  // spdlog::info("onrspinstrument {0} ", pRspInfo->ErrorID);
+  spdlog::info("{0} {1} {2} {3}", pInstrument->InstrumentID,
+               pInstrument->InstrumentName, pInstrument->ExchangeID,
+               pInstrument->UnderlyingInstrID);
+}
+
 void TradeCtp::OnRspQryTradingAccount(
     CThostFtdcTradingAccountField *pTradingAccount,
     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
+
 void TradeCtp::OnRspQryInvestorPosition(
     CThostFtdcInvestorPositionField *pInvestorPosition,
     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
-  spdlog::info("OnRspQryInvestorPosition code={0} msg={0}", pRspInfo->ErrorID,
-                std::string(pRspInfo->ErrorMsg));
+  spdlog::info("OnRspQryInvestorPosition, last={0}", bIsLast);
+  spdlog::info(pRspInfo == nullptr);
+  spdlog::info(pInvestorPosition->PosiDirection);
 
   // using json = nlohmann::json;
   // json j = json::parse(pInvestorPosition);
@@ -93,9 +104,7 @@ void TradeCtp::OnRspOrderAction(
     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
 void TradeCtp::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                           bool bIsLast) {}
-void TradeCtp::OnFrontDisconnected(int nReason) {
-  spdlog::info("disconnect");
-}
+void TradeCtp::OnFrontDisconnected(int nReason) { spdlog::info("disconnect"); }
 void TradeCtp::OnHeartBeatWarning(int nTimeLapse) {}
 void TradeCtp::OnRtnOrder(CThostFtdcOrderField *pOrder) {}
 void TradeCtp::OnRtnTrade(CThostFtdcTradeField *pTrade) {}
@@ -129,6 +138,7 @@ void TradeCtp::ReqQrySettlementInfo() {
   memset(&req, 0, sizeof(req));
   strcpy(req.BrokerID, _broker_id.c_str());
   strcpy(req.InvestorID, _investor_id.c_str());
+  spdlog::info("before settlement req");
 
   _td_api->ReqQrySettlementInfo(&req, ++_requestId);
 }
@@ -136,14 +146,22 @@ void TradeCtp::ReqQrySettlementInfo() {
 void TradeCtp::ReqQryInvestorPosition() {
   spdlog::info("ReqQryInvestorPosition");
 
-  CThostFtdcQryInvestorPositionField req;
-  memset(&req, 0, sizeof(req));
+  CThostFtdcQryInvestorPositionField req = {0};
+  // memset(&req, 0, sizeof(req));
   strcpy(req.BrokerID, _broker_id.c_str());
   strcpy(req.InvestorID, _investor_id.c_str());
 
   spdlog::info("before position req");
 
-  _td_api->ReqQryInvestorPosition(&req, ++_requestId);
+  int ret = _td_api->ReqQryInvestorPosition(&req, ++_requestId);
+  spdlog::info("ret={0}", ret);
+}
+
+void TradeCtp::ReqQryInstrument() {
+  spdlog::info("qryinstrument");
+  CThostFtdcQryInstrumentField req = {0};
+  // memset(&req, 0, sizeof(req));
+  _td_api->ReqQryInstrument(&req, ++_requestId);
 }
 
 }  // namespace am

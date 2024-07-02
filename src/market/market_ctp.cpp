@@ -3,7 +3,10 @@
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 
+#include <iostream>
 #include <nlohmann/json.hpp>
+
+#include "convert/codec.hpp"
 
 namespace am {
 void MarketCtp::LoadConfig() {
@@ -43,7 +46,7 @@ void MarketCtp::Subscribe() {
 
   // TODO how to get all instrument ids
   char *ppInstrumentID[]{
-      "au2408",
+      "au2408C560",
   };
   _md_api->SubscribeMarketData(ppInstrumentID, 1);
 }
@@ -86,7 +89,8 @@ void MarketCtp::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID,
 void MarketCtp::OnRspSubMarketData(
     CThostFtdcSpecificInstrumentField *pSpecificInstrument,
     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
-  spdlog::info("OnRspSubMarketData...");
+  spdlog::info("OnRspSubMarketData...{0} {1}", pRspInfo->ErrorID,
+               ::EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
 }
 
 void MarketCtp::OnRspUnSubMarketData(
@@ -106,7 +110,10 @@ void MarketCtp::OnRtnDepthMarketData(
   // using json = nlohmann::json;
   // json j = json::parse(*pDepthMarketData);
 
-  spdlog::info("{0}", pDepthMarketData->LastPrice);
+  spdlog::info("last={0} open={1} close={2} high={3} low={4} up={5}",
+               pDepthMarketData->LastPrice, pDepthMarketData->OpenPrice,
+               pDepthMarketData->PreClosePrice, pDepthMarketData->HighestPrice,
+               pDepthMarketData->LowestPrice,pDepthMarketData->TradingDay);
 }
 
 void MarketCtp::OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp) {}

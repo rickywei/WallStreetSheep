@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-std::string Encode(const std::string& from, const std::string& to,
+inline std::string Encode(const std::string& from, const std::string& to,
                    const std::string& source) {
   int source_len = source.length();
   spdlog::info("{0}", source_len);
@@ -23,7 +23,7 @@ std::string Encode(const std::string& from, const std::string& to,
   return std::string(target.get());
 }
 
-std::string EncodeUtf8(const std::string&& from, const std::string&& source) {
+inline std::string EncodeUtf8(const std::string&& from, const std::string&& source) {
   std::string to = "utf8";
   return Encode(from, to, source);
 }
