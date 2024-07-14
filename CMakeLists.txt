@@ -10,13 +10,14 @@ set(CMAKE_BUILD_TYPE Debug)
 find_package(nlohmann_json REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(spdlog REQUIRED)
+
 # find_package(fmt REQUIRED)
 find_package(ICU COMPONENTS data uc i18n io REQUIRED)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/market MARKET)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/trade TRADE)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp ${MARKET}
-                               ${TRADE})
+  ${TRADE})
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC ${PROJECT_SOURCE_DIR}/inc
@@ -28,6 +29,7 @@ target_link_libraries(
   PUBLIC nlohmann_json::nlohmann_json
   PUBLIC yaml-cpp::yaml-cpp
   PUBLIC spdlog::spdlog
+
   # PUBLIC fmt::fmt
   PUBLIC ICU::data
   PUBLIC ICU::uc
