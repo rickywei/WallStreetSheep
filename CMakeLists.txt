@@ -10,6 +10,8 @@ set(CMAKE_BUILD_TYPE Debug)
 find_package(nlohmann_json REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(libpqxx REQUIRED)
+find_package(boost REQUIRED)
 
 # find_package(fmt REQUIRED)
 find_package(ICU COMPONENTS data uc i18n io REQUIRED)
@@ -29,6 +31,7 @@ target_link_libraries(
   PUBLIC nlohmann_json::nlohmann_json
   PUBLIC yaml-cpp::yaml-cpp
   PUBLIC spdlog::spdlog
+  PUBLIC pqxx
 
   # PUBLIC fmt::fmt
   PUBLIC ICU::data

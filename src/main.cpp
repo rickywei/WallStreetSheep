@@ -21,27 +21,27 @@ void replace_default_logger() {
   spdlog::set_default_logger(logger);
   spdlog::set_level(spdlog::level::debug);
   spdlog::flush_every(std::chrono::seconds(1));
-  spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [tid=%t] %v");
+  spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%@] [tid=%t] %v");
 }
 
 int main() {
   replace_default_logger();
-  std::jthread([]() {
-    am::Market *market_ctp = new am::MarketCtp("../config.yaml");
-    market_ctp->Init();
-    market_ctp->Connect();
-    spdlog::info("market finished...");
-  });
+  // std::jthread([]() {
+  //   am::Market *market_ctp = new am::MarketCtp("../config.yaml");
+  //   market_ctp->Init();
+  //   market_ctp->Connect();
+  //   SPDLOG_INFO("market finished...");
+  // });
 
   am::Trade *trade_ctp = new am::TradeCtp("../config.yaml");
   std::thread t([trade_ctp]() {
-    spdlog::info("here............1");
+    SPDLOG_INFO("here............1");
     trade_ctp->Init();
     trade_ctp->Connect();
-    spdlog::info("here............2");
+    SPDLOG_INFO("here............2");
   });
   sleep(1);
-  spdlog::info("here............3");
+  SPDLOG_INFO("here............3");
 
   // dynamic_cast<am::TradeCtp *>(trade_ctp)->ReqQryInvestorPosition();
   dynamic_cast<am::TradeCtp *>(trade_ctp)->ReqQryInstrument();
