@@ -8,17 +8,13 @@
 namespace am {
 
 class MarketCtp final : public Market, public CThostFtdcMdSpi {
-  // Market
  public:
-  virtual void LoadConfig() override;
-  virtual void Init() override;
-  virtual void Connect() override;
-  virtual void Disconnect() override;
-  virtual void Subscribe() override;
-  virtual void Unsubscribe() override;
+  virtual void init() override;
+  virtual void start() override;
+  virtual void disconnect() override;
+  virtual void subscribe() override;
+  virtual void unsubscribe() override;
 
-  // CThostFtdcMdSpi
- public:
   virtual void OnFrontConnected() override;
   virtual void OnFrontDisconnected(int nReason) override;
   virtual void OnHeartBeatWarning(int nTimeLapse) override;
@@ -55,21 +51,18 @@ class MarketCtp final : public Market, public CThostFtdcMdSpi {
   virtual ~MarketCtp();
 
  private:
-  [[nodiscoard]] int Login();
-  bool IsError(const CThostFtdcRspInfoField *pRspInfo) const;
+  [[nodiscard]] int login();
 
  private:
   int _requestId = 0;
-  std::string _front_addr;
-  std::string _broker_id;
-  std::string _investor_id;
+  std::string _frontAddr;
+  std::string _brokerId;
+  std::string _investorId;
   std::string _password;
   std::string _flowPath;
-  bool _is_using_udp;
-  bool _is_multicast;
-  CThostFtdcMdApi *_md_api;
-  bool is_connect;
-
+  bool _isUsingUdp;
+  bool _isMulticast;
+  CThostFtdcMdApi *_mdApi;
 };
 
 }  // namespace am

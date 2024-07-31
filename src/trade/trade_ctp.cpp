@@ -9,39 +9,36 @@
 #include "convert/codec.hpp"
 
 namespace am {
-void TradeCtp::LoadConfig() {
+void TradeCtp::init() {
   YAML::Node config = YAML::LoadFile(_config_path);
   YAML::Node trade_config = config["trade"];
-  _front_addr = trade_config["front_addr"].as<std::string>();
-  _broker_id = trade_config["broker_id"].as<std::string>();
-  _investor_id = trade_config["investor_id"].as<std::string>();
+  _frontAddr = trade_config["front_addr"].as<std::string>();
+  _brokerId = trade_config["broker_id"].as<std::string>();
+  _investorId = trade_config["investor_id"].as<std::string>();
   _password = trade_config["password"].as<std::string>();
   _flowPath = trade_config["flow_path"].as<std::string>();
   SPDLOG_INFO("read trade config...\n{0}", YAML::Dump(trade_config));
 }
 
-void TradeCtp::Init() {
-  SPDLOG_INFO("version={0}", _td_api->GetApiVersion());
-  _td_api = CThostFtdcTraderApi::CreateFtdcTraderApi(_flowPath.c_str());
-  _td_api->RegisterSpi(this);
+void TradeCtp::start() {
+  SPDLOG_INFO("version={0}", _tdApi->GetApiVersion());
+  _tdApi = CThostFtdcTraderApi::CreateFtdcTraderApi(_flowPath.c_str());
+  _tdApi->RegisterSpi(this);
+  _tdApi->RegisterFront(const_cast<char *>(_frontAddr.c_str()));
+  _tdApi->SubscribePrivateTopic(THOST_TERT_QUICK);
+  _tdApi->SubscribePublicTopic(THOST_TERT_QUICK);
+  _tdApi->Init();
+  int ret = _tdApi->Join();
+  SPDLOG_INFO("join returned, ret={}", ret);
 }
 
-void TradeCtp::Connect() {
-  SPDLOG_INFO("connect front");
-  _td_api->RegisterFront(const_cast<char *>(_front_addr.c_str()));
-  _td_api->SubscribePrivateTopic(THOST_TERT_QUICK);
-  _td_api->SubscribePublicTopic(THOST_TERT_QUICK);
-  _td_api->Init();
-  _td_api->Join();
-}
-
-void TradeCtp::Disconnect() {
+void TradeCtp::disconnect() {
   SPDLOG_ERROR("disconnect");
-  Connect();
+  start();
 }
 
 void TradeCtp::OnFrontConnected() {
-  if (int ret = Login(); ret != 0) {
+  if (int ret = login(); ret != 0) {
     SPDLOG_ERROR("login failed...ret = {}", ret);
     return;
   }
@@ -52,10 +49,10 @@ void TradeCtp::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
   SPDLOG_INFO("onRspUserLogin code={} msg={}", pRspInfo->ErrorID,
               ::EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
 
-  _front_id = pRspUserLogin->FrontID;
-  _session_id = pRspUserLogin->SessionID;
-  _max_order_ref = atoi(pRspUserLogin->MaxOrderRef);
-  _trading_day = atoi(_td_api->GetTradingDay());
+  _frontId = pRspUserLogin->FrontID;
+  _sessionId = pRspUserLogin->SessionID;
+  _maxOrderRef = atoi(pRspUserLogin->MaxOrderRef);
+  _tradingDay = atoi(_tdApi->GetTradingDay());
 
   // ReqQryInvestorPosition();
   // ReqQrySettlementInfo();
@@ -104,21 +101,21 @@ void TradeCtp::OnRtnOrder(CThostFtdcOrderField *pOrder) {}
 void TradeCtp::OnRtnTrade(CThostFtdcTradeField *pTrade) {}
 
 TradeCtp::TradeCtp(std::string config_path) : Trade(config_path) {
-  LoadConfig();
+  init();
 }
 
-TradeCtp::~TradeCtp() { _td_api->Release(); }
+TradeCtp::~TradeCtp() { _tdApi->Release(); }
 
-int TradeCtp::Login() {
+int TradeCtp::login() {
   SPDLOG_INFO("login");
 
   CThostFtdcReqUserLoginField req;
   memset(&req, 0, sizeof(req));
-  strcpy(req.BrokerID, _broker_id.c_str());
-  strcpy(req.UserID, _investor_id.c_str());
+  strcpy(req.BrokerID, _brokerId.c_str());
+  strcpy(req.UserID, _investorId.c_str());
   strcpy(req.Password, _password.c_str());
 
-  return _td_api->ReqUserLogin(&req, ++_requestId);
+  return _tdApi->ReqUserLogin(&req, ++_requestId);
 }
 
 void TradeCtp::ReqQrySettlementInfo() {
@@ -126,11 +123,11 @@ void TradeCtp::ReqQrySettlementInfo() {
 
   CThostFtdcQrySettlementInfoField req;
   memset(&req, 0, sizeof(req));
-  strcpy(req.BrokerID, _broker_id.c_str());
-  strcpy(req.InvestorID, _investor_id.c_str());
+  strcpy(req.BrokerID, _brokerId.c_str());
+  strcpy(req.InvestorID, _investorId.c_str());
   SPDLOG_INFO("before settlement req");
 
-  _td_api->ReqQrySettlementInfo(&req, ++_requestId);
+  _tdApi->ReqQrySettlementInfo(&req, ++_requestId);
 }
 
 void TradeCtp::ReqQryInvestorPosition() {
@@ -138,12 +135,12 @@ void TradeCtp::ReqQryInvestorPosition() {
 
   CThostFtdcQryInvestorPositionField req = {0};
   // memset(&req, 0, sizeof(req));
-  strcpy(req.BrokerID, _broker_id.c_str());
-  strcpy(req.InvestorID, _investor_id.c_str());
+  strcpy(req.BrokerID, _brokerId.c_str());
+  strcpy(req.InvestorID, _investorId.c_str());
 
   SPDLOG_INFO("before position req");
 
-  int ret = _td_api->ReqQryInvestorPosition(&req, ++_requestId);
+  int ret = _tdApi->ReqQryInvestorPosition(&req, ++_requestId);
   SPDLOG_INFO("ret={0}", ret);
 }
 
@@ -151,7 +148,7 @@ void TradeCtp::ReqQryInstrument() {
   SPDLOG_INFO("qryinstrument");
   CThostFtdcQryInstrumentField req = {0};
   // memset(&req, 0, sizeof(req));
-  _td_api->ReqQryInstrument(&req, ++_requestId);
+  _tdApi->ReqQryInstrument(&req, ++_requestId);
 }
 
 }  // namespace am

@@ -1,11 +1,14 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include <boost/asio/post.hpp>
+#include <boost/asio/thread_pool.hpp>
 #include <chrono>
 #include <iostream>
 #include <memory>
 #include <thread>
 
+#include "alphamaker/common/common.hpp"
 #include "alphamaker/market/market.hpp"
 #include "alphamaker/market/market_ctp.hpp"
 #include "alphamaker/trade/trade.hpp"
@@ -21,31 +24,26 @@ void replace_default_logger() {
   spdlog::set_default_logger(logger);
   spdlog::set_level(spdlog::level::debug);
   spdlog::flush_every(std::chrono::seconds(1));
-  spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%@] [tid=%t] %v");
+  spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%@] [%!] [tid=%t] %v");
 }
 
 int main() {
   replace_default_logger();
-  // std::jthread([]() {
-  //   am::Market *market_ctp = new am::MarketCtp("../config.yaml");
-  //   market_ctp->Init();
-  //   market_ctp->Connect();
-  //   SPDLOG_INFO("market finished...");
+
+  am::postTask([]() {
+    auto market_ctp = std::make_unique<am::MarketCtp>("../config.yaml");
+    market_ctp->start();
+    SPDLOG_INFO("ctp market started...");
+  });
+  // am::postTask([]() {
+  //   auto trade_ctp = std::make_unique<am::TradeCtp>("../config.yaml");
+  //   trade_ctp->start();
+  //   SPDLOG_INFO("ctp trade started...");
+  //   // dynamic_cast<am::TradeCtp *>(trade_ctp.get())->ReqQryInstrument();
   // });
 
-  am::Trade *trade_ctp = new am::TradeCtp("../config.yaml");
-  std::thread t([trade_ctp]() {
-    SPDLOG_INFO("here............1");
-    trade_ctp->Init();
-    trade_ctp->Connect();
-    SPDLOG_INFO("here............2");
-  });
-  sleep(1);
-  SPDLOG_INFO("here............3");
-
   // dynamic_cast<am::TradeCtp *>(trade_ctp)->ReqQryInvestorPosition();
-  dynamic_cast<am::TradeCtp *>(trade_ctp)->ReqQryInstrument();
-  if (t.joinable()) t.join();
 
+  am::getGlobalThreadPool()->join();
   return 0;
 }

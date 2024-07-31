@@ -11,15 +11,11 @@
 namespace am {
 
 class TradeCtp final : public Trade, public CThostFtdcTraderSpi {
-  // Trade
  public:
-  virtual void LoadConfig() override;
-  virtual void Init() override;
-  virtual void Connect() override;
-  virtual void Disconnect() override;
+  virtual void init() override;
+  virtual void start() override;
+  virtual void disconnect() override;
 
-  // CThostFtdcTraderSpi
- public:
   virtual void OnFrontConnected() override;
   virtual void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                               CThostFtdcRspInfoField *pRspInfo, int nRequestID,
@@ -57,22 +53,20 @@ class TradeCtp final : public Trade, public CThostFtdcTraderSpi {
   void ReqQryInstrument();
 
  private:
-  [[nodiscoard]] int Login();
+  [[nodiscard]] int login();
 
  private:
   int _requestId = 0;
-  std::string _front_addr;
-  std::string _broker_id;
-  std::string _investor_id;
+  std::string _frontAddr;
+  std::string _brokerId;
+  std::string _investorId;
   std::string _password;
   std::string _flowPath;
-  CThostFtdcTraderApi *_td_api;
-  int _front_id;
-  int _session_id;
-  int _max_order_ref;
-  int _trading_day;
+  CThostFtdcTraderApi *_tdApi;
+  int _frontId;
+  int _sessionId;
+  int _maxOrderRef;
+  int _tradingDay;
 };
 
 }  // namespace am
-
-

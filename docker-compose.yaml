@@ -1,9 +1,10 @@
 services:
   db:
     image: postgres
+    container_name: postgres
     restart: always
     environment:
-      POSTGRES_PASSWORD: root
+      POSTGRES_PASSWORD: postgres
     volumes:
       - ./build/volumes/pg:/var/lib/postgresql/data
     ports:
@@ -11,6 +12,7 @@ services:
 
   adminer:
     image: adminer
+    container_name: adminer
     restart: always
     ports:
       - 8080:8080

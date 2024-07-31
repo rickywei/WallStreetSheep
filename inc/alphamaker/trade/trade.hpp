@@ -8,10 +8,9 @@ class Trade {
       : _config_path(config_path){};
   virtual ~Trade() = default;
 
-  virtual void LoadConfig() = 0;
-  virtual void Init() = 0;
-  virtual void Connect() = 0;
-  virtual void Disconnect() = 0;
+  virtual void init() = 0;
+  virtual void start() = 0;
+  virtual void disconnect() = 0;
 
  protected:
   const std::string _config_path;

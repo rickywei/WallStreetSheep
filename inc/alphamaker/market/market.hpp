@@ -1,22 +1,28 @@
 #pragma once
-#include <string>
+
+#include <iostream>
+
+#include "alphamaker/db/postgres.hpp"
+
 namespace am {
 
 class Market {
  public:
-  Market(std::string config_path = "./config.yaml")
-      : _config_path(config_path){};
+  Market(std::string configPath = "./config.yaml")
+      : _configPath(configPath) {
+        _db=std::make_unique<Postgres>(configPath);
+      };
   virtual ~Market() = default;
 
-  virtual void LoadConfig() = 0;
-  virtual void Init() = 0;
-  virtual void Connect() = 0;
-  virtual void Disconnect() = 0;
-  virtual void Subscribe() = 0;
-  virtual void Unsubscribe() = 0;
+  virtual void init() = 0;
+  virtual void start() = 0;
+  virtual void disconnect() = 0;
+  virtual void subscribe() = 0;
+  virtual void unsubscribe() = 0;
 
  protected:
-  const std::string _config_path;
+  const std::string _configPath;
+  std::unique_ptr<Postgres> _db;
 };
 
 }  // namespace am
