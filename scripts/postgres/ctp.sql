@@ -1,7 +1,7 @@
--- Active: 1722392652205@@127.0.0.1@5432@alphamaker
-CREATE DATABASE alphaMaker;
+-- Active: 1722392652205@@127.0.0.1@5432@WallStreetSheep
+CREATE DATABASE WallStreetSheep;
 
-CREATE TABLE ctpMarket (
+CREATE TABLE MarketCtp (
     TradingDay TEXT NOT NULL,
     reserve1 TEXT NOT NULL,
     ExchangeID TEXT NOT NULL,

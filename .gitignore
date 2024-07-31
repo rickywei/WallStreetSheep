@@ -30,7 +30,7 @@
 *.exe
 *.out
 *.app
-AlphaMaker
+WallStreetSheep
 
 # build
 build
@@ -43,3 +43,6 @@ config.yaml
 
 # con
 *.con
+
+# docker
+./volumes

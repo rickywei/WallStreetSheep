@@ -1,4 +1,4 @@
-#include "alphamaker/market/market_ctp.hpp"
+#include "WallStreetSheep/market/MarketCtp.hpp"
 
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
@@ -6,10 +6,10 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-#include "alphamaker/common/common.hpp"
+#include "WallStreetSheep/common/common.hpp"
 #include "convert/codec.hpp"
 
-namespace am {
+namespace wss {
 void MarketCtp::init() {
   YAML::Node config = YAML::LoadFile(_configPath);
   YAML::Node market_config = config["market"];
@@ -34,7 +34,7 @@ void MarketCtp::start() {
 }
 
 void MarketCtp::disconnect() {
-  SPDLOG_INFO("reconnect");
+  SPDLOG_INFO("");
   start();
 }
 
@@ -57,15 +57,16 @@ void MarketCtp::OnFrontConnected() {
 }
 
 void MarketCtp::OnFrontDisconnected(int nReason) {
-  SPDLOG_INFO("OnFrontDisconnected...{0}", nReason);
+  SPDLOG_INFO("nReason={0}", nReason);
 }
 
 void MarketCtp::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                                CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                                bool bIsLast) {
-  SPDLOG_INFO("OnRspUserLogin...code={0} msg={0}", pRspInfo->ErrorID,
-              pRspInfo->ErrorMsg);
-  if (pRspInfo->ErrorID != 0) return;
+  if (pRspInfo->ErrorID != 0) {
+    SPDLOG_INFO("code={0} msg={0}", pRspInfo->ErrorID, pRspInfo->ErrorMsg);
+    return;
+  }
   subscribe();
 }
 
@@ -103,69 +104,69 @@ void MarketCtp::OnRspUnSubForQuoteRsp(
 
 void MarketCtp::OnRtnDepthMarketData(
     CThostFtdcDepthMarketDataField *pDepthMarketData) {
-  postTask([pDepthMarketData, this]() {
-    SPDLOG_INFO("xxxxxxxxxxxxxxxx,updatetime-mil={}-{}",
-                pDepthMarketData->UpdateTime, pDepthMarketData->UpdateMillisec);
-    try {
-      auto work = this->_db->newWork();
-      work->exec_params(
-          "INSERT INTO ctpMarket (TradingDay, reserve1, ExchangeID, reserve2, "
-          "LastPrice, PreSettlementPrice, PreClosePrice, PreOpenInterest, "
-          "OpenPrice, HighestPrice, LowestPrice, Volume, Turnover, "
-          "OpenInterest, "
-          "ClosePrice, SettlementPrice, UpperLimitPrice, LowerLimitPrice, "
-          "PreDelta, CurrDelta, UpdateTime, UpdateMillisec, BidPrice1, "
-          "BidVolume1, "
-          "AskPrice1, AskVolume1, BidPrice2, BidVolume2, AskPrice2, "
-          "AskVolume2, "
-          "BidPrice3, BidVolume3, AskPrice3, AskVolume3, BidPrice4, "
-          "BidVolume4, "
-          "AskPrice4, AskVolume4, BidPrice5, BidVolume5, AskPrice5, "
-          "AskVolume5, "
-          "AveragePrice, ActionDay, InstrumentID, ExchangeInstID, "
-          "BandingUpperPrice, BandingLowerPrice) VALUES "
-          "($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,"
-          "$"
-          "20,"
-          "$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,"
-          "$"
-          "38,"
-          "$39,$40,$41,$42,$43,$44,$45,$46,$47,$48)",
-          pDepthMarketData->TradingDay, pDepthMarketData->reserve1,
-          pDepthMarketData->ExchangeID, pDepthMarketData->reserve2,
-          pDepthMarketData->LastPrice, pDepthMarketData->PreSettlementPrice,
-          pDepthMarketData->PreClosePrice, pDepthMarketData->PreOpenInterest,
-          pDepthMarketData->OpenPrice, pDepthMarketData->HighestPrice,
-          pDepthMarketData->LowestPrice, pDepthMarketData->Volume,
-          pDepthMarketData->Turnover, pDepthMarketData->OpenInterest,
-          pDepthMarketData->ClosePrice, pDepthMarketData->SettlementPrice,
-          pDepthMarketData->UpperLimitPrice, pDepthMarketData->LowerLimitPrice,
-          pDepthMarketData->PreDelta, pDepthMarketData->CurrDelta,
-          pDepthMarketData->UpdateTime, pDepthMarketData->UpdateMillisec,
-          pDepthMarketData->BidPrice1, pDepthMarketData->BidVolume1,
-          pDepthMarketData->AskPrice1, pDepthMarketData->AskVolume1,
-          pDepthMarketData->BidPrice2, pDepthMarketData->BidVolume2,
-          pDepthMarketData->AskPrice2, pDepthMarketData->AskVolume2,
-          pDepthMarketData->BidPrice3, pDepthMarketData->BidVolume3,
-          pDepthMarketData->AskPrice3, pDepthMarketData->AskVolume3,
-          pDepthMarketData->BidPrice4, pDepthMarketData->BidVolume4,
-          pDepthMarketData->AskPrice4, pDepthMarketData->AskVolume4,
-          pDepthMarketData->BidPrice5, pDepthMarketData->BidVolume5,
-          pDepthMarketData->AskPrice5, pDepthMarketData->AskVolume5,
-          pDepthMarketData->AveragePrice, pDepthMarketData->ActionDay,
-          pDepthMarketData->InstrumentID, pDepthMarketData->ExchangeInstID,
-          pDepthMarketData->BandingUpperPrice,
-          pDepthMarketData->BandingLowerPrice);
-      work->commit();
-    } catch (std::exception &e) {
-      SPDLOG_ERROR("save ctp market data failed, exception={}", e.what());
-    }
-  });
+  // postTask([pDepthMarketData, this]() {
+  SPDLOG_INFO("updatetime-mil={}-{}", pDepthMarketData->UpdateTime,
+              pDepthMarketData->UpdateMillisec);
+  try {
+    auto work = this->_db->newWork();
+    work->exec_params(
+        "INSERT INTO MarketCtp (TradingDay, reserve1, ExchangeID, reserve2, "
+        "LastPrice, PreSettlementPrice, PreClosePrice, PreOpenInterest, "
+        "OpenPrice, HighestPrice, LowestPrice, Volume, Turnover, "
+        "OpenInterest, "
+        "ClosePrice, SettlementPrice, UpperLimitPrice, LowerLimitPrice, "
+        "PreDelta, CurrDelta, UpdateTime, UpdateMillisec, BidPrice1, "
+        "BidVolume1, "
+        "AskPrice1, AskVolume1, BidPrice2, BidVolume2, AskPrice2, "
+        "AskVolume2, "
+        "BidPrice3, BidVolume3, AskPrice3, AskVolume3, BidPrice4, "
+        "BidVolume4, "
+        "AskPrice4, AskVolume4, BidPrice5, BidVolume5, AskPrice5, "
+        "AskVolume5, "
+        "AveragePrice, ActionDay, InstrumentID, ExchangeInstID, "
+        "BandingUpperPrice, BandingLowerPrice) VALUES "
+        "($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,"
+        "$"
+        "20,"
+        "$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,"
+        "$"
+        "38,"
+        "$39,$40,$41,$42,$43,$44,$45,$46,$47,$48)",
+        pDepthMarketData->TradingDay, pDepthMarketData->reserve1,
+        pDepthMarketData->ExchangeID, pDepthMarketData->reserve2,
+        pDepthMarketData->LastPrice, pDepthMarketData->PreSettlementPrice,
+        pDepthMarketData->PreClosePrice, pDepthMarketData->PreOpenInterest,
+        pDepthMarketData->OpenPrice, pDepthMarketData->HighestPrice,
+        pDepthMarketData->LowestPrice, pDepthMarketData->Volume,
+        pDepthMarketData->Turnover, pDepthMarketData->OpenInterest,
+        pDepthMarketData->ClosePrice, pDepthMarketData->SettlementPrice,
+        pDepthMarketData->UpperLimitPrice, pDepthMarketData->LowerLimitPrice,
+        pDepthMarketData->PreDelta, pDepthMarketData->CurrDelta,
+        pDepthMarketData->UpdateTime, pDepthMarketData->UpdateMillisec,
+        pDepthMarketData->BidPrice1, pDepthMarketData->BidVolume1,
+        pDepthMarketData->AskPrice1, pDepthMarketData->AskVolume1,
+        pDepthMarketData->BidPrice2, pDepthMarketData->BidVolume2,
+        pDepthMarketData->AskPrice2, pDepthMarketData->AskVolume2,
+        pDepthMarketData->BidPrice3, pDepthMarketData->BidVolume3,
+        pDepthMarketData->AskPrice3, pDepthMarketData->AskVolume3,
+        pDepthMarketData->BidPrice4, pDepthMarketData->BidVolume4,
+        pDepthMarketData->AskPrice4, pDepthMarketData->AskVolume4,
+        pDepthMarketData->BidPrice5, pDepthMarketData->BidVolume5,
+        pDepthMarketData->AskPrice5, pDepthMarketData->AskVolume5,
+        pDepthMarketData->AveragePrice, pDepthMarketData->ActionDay,
+        pDepthMarketData->InstrumentID, pDepthMarketData->ExchangeInstID,
+        pDepthMarketData->BandingUpperPrice,
+        pDepthMarketData->BandingLowerPrice);
+    work->commit();
+  } catch (std::exception &e) {
+    SPDLOG_ERROR("save ctp market data failed, exception={}", e.what());
+  }
+  // });
 }
 
 void MarketCtp::OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp) {}
 
-MarketCtp::MarketCtp(std::string configPath) : Market(configPath) { init(); }
+MarketCtp::MarketCtp(std::string configPath) : IMarket(configPath) { init(); }
 
 MarketCtp::~MarketCtp() { _mdApi->Release(); }
 
@@ -181,4 +182,4 @@ int MarketCtp::login() {
   return _mdApi->ReqUserLogin(&req, ++_requestId);
 }
 
-}  // namespace am
+}  // namespace wss

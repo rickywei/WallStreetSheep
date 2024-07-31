@@ -1,8 +1,8 @@
-#include "alphamaker/common/common.hpp"
+#include "WallStreetSheep/common/common.hpp"
 
 #include <boost/asio/post.hpp>
 
-namespace am {
+namespace wss {
 
 std::shared_ptr<boost::asio::thread_pool> getGlobalThreadPool() {
   static std::shared_ptr<boost::asio::thread_pool> pool =
@@ -13,4 +13,4 @@ void postTask(std::function<void()> &&fn) {
   boost::asio::post(*getGlobalThreadPool(), std::move(fn));
 }
 
-}  // namespace am
+}  // namespace wss

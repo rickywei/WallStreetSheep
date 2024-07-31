@@ -3,7 +3,7 @@ postgres:
   port: 5432
   user: "postgres"
   password: "password"
-  database: "alphaMaker"
+  database: "WallStreetSheep"
 
 market:
   front_addr: tcp://180.168.146.187:10131

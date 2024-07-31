@@ -1,4 +1,4 @@
-#include "alphamaker/trade/trade_ctp.hpp"
+#include "WallStreetSheep/trade/TradeCtp.hpp"
 
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
@@ -8,7 +8,7 @@
 
 #include "convert/codec.hpp"
 
-namespace am {
+namespace wss {
 void TradeCtp::init() {
   YAML::Node config = YAML::LoadFile(_config_path);
   YAML::Node trade_config = config["trade"];
@@ -17,11 +17,11 @@ void TradeCtp::init() {
   _investorId = trade_config["investor_id"].as<std::string>();
   _password = trade_config["password"].as<std::string>();
   _flowPath = trade_config["flow_path"].as<std::string>();
-  SPDLOG_INFO("read trade config...\n{0}", YAML::Dump(trade_config));
+  SPDLOG_INFO("read ctp trade config...\n{0}", YAML::Dump(trade_config));
 }
 
 void TradeCtp::start() {
-  SPDLOG_INFO("version={0}", _tdApi->GetApiVersion());
+  SPDLOG_INFO("version={}", _tdApi->GetApiVersion());
   _tdApi = CThostFtdcTraderApi::CreateFtdcTraderApi(_flowPath.c_str());
   _tdApi->RegisterSpi(this);
   _tdApi->RegisterFront(const_cast<char *>(_frontAddr.c_str()));
@@ -39,14 +39,14 @@ void TradeCtp::disconnect() {
 
 void TradeCtp::OnFrontConnected() {
   if (int ret = login(); ret != 0) {
-    SPDLOG_ERROR("login failed...ret = {}", ret);
+    SPDLOG_ERROR("login failed, ret={}", ret);
     return;
   }
 }
 void TradeCtp::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                               CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                               bool bIsLast) {
-  SPDLOG_INFO("onRspUserLogin code={} msg={}", pRspInfo->ErrorID,
+  SPDLOG_INFO("code={} msg={}", pRspInfo->ErrorID,
               ::EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
 
   _frontId = pRspUserLogin->FrontID;
@@ -60,7 +60,7 @@ void TradeCtp::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
 void TradeCtp::OnRspSettlementInfoConfirm(
     CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm,
     CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
-  SPDLOG_INFO("OnRspSettlementInfoConfirm code={0}", pRspInfo->ErrorID);
+  SPDLOG_INFO("code={}", pRspInfo->ErrorID);
 }
 void TradeCtp::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument,
                                   CThostFtdcRspInfoField *pRspInfo,
@@ -100,17 +100,12 @@ void TradeCtp::OnHeartBeatWarning(int nTimeLapse) {}
 void TradeCtp::OnRtnOrder(CThostFtdcOrderField *pOrder) {}
 void TradeCtp::OnRtnTrade(CThostFtdcTradeField *pTrade) {}
 
-TradeCtp::TradeCtp(std::string config_path) : Trade(config_path) {
-  init();
-}
+TradeCtp::TradeCtp(std::string config_path) : ITrade(config_path) { init(); }
 
 TradeCtp::~TradeCtp() { _tdApi->Release(); }
 
 int TradeCtp::login() {
-  SPDLOG_INFO("login");
-
-  CThostFtdcReqUserLoginField req;
-  memset(&req, 0, sizeof(req));
+  CThostFtdcReqUserLoginField req = {0};
   strcpy(req.BrokerID, _brokerId.c_str());
   strcpy(req.UserID, _investorId.c_str());
   strcpy(req.Password, _password.c_str());
@@ -121,8 +116,7 @@ int TradeCtp::login() {
 void TradeCtp::ReqQrySettlementInfo() {
   SPDLOG_INFO("ReqQrySettlementInfo");
 
-  CThostFtdcQrySettlementInfoField req;
-  memset(&req, 0, sizeof(req));
+  CThostFtdcQrySettlementInfoField req = {0};
   strcpy(req.BrokerID, _brokerId.c_str());
   strcpy(req.InvestorID, _investorId.c_str());
   SPDLOG_INFO("before settlement req");
@@ -134,7 +128,6 @@ void TradeCtp::ReqQryInvestorPosition() {
   SPDLOG_INFO("ReqQryInvestorPosition");
 
   CThostFtdcQryInvestorPositionField req = {0};
-  // memset(&req, 0, sizeof(req));
   strcpy(req.BrokerID, _brokerId.c_str());
   strcpy(req.InvestorID, _investorId.c_str());
 
@@ -145,10 +138,8 @@ void TradeCtp::ReqQryInvestorPosition() {
 }
 
 void TradeCtp::ReqQryInstrument() {
-  SPDLOG_INFO("qryinstrument");
   CThostFtdcQryInstrumentField req = {0};
-  // memset(&req, 0, sizeof(req));
   _tdApi->ReqQryInstrument(&req, ++_requestId);
 }
 
-}  // namespace am
+}  // namespace wss
