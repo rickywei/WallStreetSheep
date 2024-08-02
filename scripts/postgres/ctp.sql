@@ -1,11 +1,11 @@
--- Active: 1722392652205@@127.0.0.1@5432@WallStreetSheep
+-- Active: 1722473306304@@127.0.0.1@5432@wallstreetsheep
 CREATE DATABASE WallStreetSheep;
 
 CREATE TABLE MarketCtp (
     TradingDay TEXT NOT NULL,
-    reserve1 TEXT NOT NULL,
+    -- reserve1 TEXT NOT NULL,
     ExchangeID TEXT NOT NULL,
-    reserve2 TEXT NOT NULL,
+    -- reserve2 TEXT NOT NULL,
     LastPrice DOUBLE PRECISION NOT NULL,
     PreSettlementPrice DOUBLE PRECISION NOT NULL,
     PreClosePrice DOUBLE PRECISION NOT NULL,
@@ -49,5 +49,49 @@ CREATE TABLE MarketCtp (
     InstrumentID TEXT NOT NULL,
     ExchangeInstID TEXT NOT NULL,
     BandingUpperPrice DOUBLE PRECISION NOT NULL,
-    BandingLowerPrice DOUBLE PRECISION NOT NULL
+    BandingLowerPrice DOUBLE PRECISION NOT NULL,
+    PRIMARY KEY (
+        InstrumentID,
+        UpdateTime,
+        UpdateMillisec
+    )
+);
+
+CREATE TABLE InstrumentCtp (
+    -- reserve1 TEXT NOT NULL,
+    ExchangeID TEXT NOT NULL,
+    InstrumentName TEXT NOT NULL,
+    -- reserve2 TEXT NOT NULL,
+    -- reserve3 TEXT NOT NULL,
+    ProductClass TEXT NOT NULL,
+    DeliveryYear INT NOT NULL,
+    DeliveryMonth INT NOT NULL,
+    MaxMarketOrderVolume INT NOT NULL,
+    MinMarketOrderVolume INT NOT NULL,
+    MaxLimitOrderVolume INT NOT NULL,
+    MinLimitOrderVolume INT NOT NULL,
+    VolumeMultiple INT NOT NULL,
+    PriceTick DOUBLE PRECISION NOT NULL,
+    CreateDate TEXT NOT NULL,
+    OpenDate TEXT NOT NULL,
+    ExpireDate TEXT NOT NULL,
+    StartDelivDate TEXT NOT NULL,
+    EndDelivDate TEXT NOT NULL,
+    InstLifePhase TEXT NOT NULL,
+    IsTrading INT NOT NULL,
+    PositionType TEXT NOT NULL,
+    PositionDateType TEXT NOT NULL,
+    LongMarginRatio DOUBLE PRECISION NOT NULL,
+    ShortMarginRatio DOUBLE PRECISION NOT NULL,
+    MaxMarginSideAlgorithm TEXT NOT NULL,
+    -- reserve4 TEXT NOT NULL,
+    StrikePrice DOUBLE PRECISION NOT NULL,
+    OptionsType TEXT NOT NULL,
+    UnderlyingMultiple DOUBLE PRECISION NOT NULL,
+    CombinationType TEXT NOT NULL,
+    InstrumentID TEXT NOT NULL,
+    ExchangeInstID TEXT NOT NULL,
+    ProductID TEXT NOT NULL,
+    UnderlyingInstrID TEXT NOT NULL,
+    PRIMARY KEY (InstrumentID)
 );

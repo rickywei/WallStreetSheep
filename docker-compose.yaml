@@ -16,3 +16,16 @@ services:
     restart: always
     ports:
       - 8080:8080
+
+  # pgbouncer:
+  #   image: bitnami/pgbouncer
+  #   container_name: pgbouncer
+  #   restart: always
+  #   environment:
+  #     - POSTGRESQL_HOST=postgres
+  #     - POSTGRESQL_PORT=5432
+  #     - POSTGRESQL_USERNAME=postgres
+  #     - POSTGRESQL_PASSWORD=postgres
+  #     - PGBOUNCER_DATABASE=wallstreetsheep
+  #   ports:
+  #     - 6432:6432

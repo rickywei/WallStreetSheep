@@ -1,25 +1,35 @@
 #include "WallStreetSheep/manager/ManagerCtp.hpp"
 
-#include "WallStreetSheep/market/IMarket.hpp"
-#include "WallStreetSheep/market/MarketCtp.hpp"
-#include "WallStreetSheep/trade/ITrade.hpp"
-#include "WallStreetSheep/trade/TradeCtp.hpp"
+#include <spdlog/spdlog.h>
+
+#include <chrono>
+#include <thread>
+
+#include "WallStreetSheep/common/common.hpp"
+
+namespace wss {
+
+ManagerCtp::ManagerCtp(std::string configPath)
+    : _md(std::make_unique<MarketCtp>(configPath)),
+      _td(std::make_unique<TradeCtp>(configPath)) {}
+
+ManagerCtp::~ManagerCtp() {}
 
 void ManagerCtp::start() {
-  auto tradeCtp = std::make_shared<wss::TradeCtp>("../config.yaml");
-  auto marketCtp = std::make_shared<wss::MarketCtp>("../config.yaml");
+  postTask([this]() { this->_td->start(); });
+  _td->_inited.wait(false);
+  // SPDLOG_INFO("after");
+  // std::this_thread::sleep_for(std::chrono::seconds(1));
+  _td->ReqQryInstrument();
 
-  wss::postTask([tradeCtp]() {
-    tradeCtp->start();
-    SPDLOG_INFO("ctp trade started...");
-  });
-  std::this_thread::sleep_for(std::chrono::seconds(1));
-  dynamic_cast<wss::TradeCtp *>(tradeCtp.get())->ReqQryInstrument();
 
-  wss::postTask([marketCtp]() {
-    marketCtp->start();
-    SPDLOG_INFO("ctp market started...");
-  });
+  // postTask([this]() { this->_md->start(); });
+  // _md->_inited.wait(false);
 
-  wss::getGlobalThreadPool()->join();
+  // _md->subscribe();
+  // // _md->subscribe(ins);
+
+  getGlobalThreadPool()->join();
 }
+
+}  // namespace wss

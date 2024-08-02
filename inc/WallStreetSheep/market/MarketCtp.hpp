@@ -1,17 +1,20 @@
 #pragma once
 
-#include <string>
-
 #include "WallStreetSheep/market/IMarket.hpp"
 #include "api/ctp_v6.7.2/ThostFtdcMdApi.h"
 
 namespace wss {
 
+class ManagerCtp;
 class MarketCtp final : public IMarket, public CThostFtdcMdSpi {
  public:
+  friend class ManagerCtp;
+
+  MarketCtp(std::string configPath);
+  virtual ~MarketCtp();
+
   virtual void init() override;
   virtual void start() override;
-  virtual void disconnect() override;
   virtual void subscribe() override;
   virtual void unsubscribe() override;
 
@@ -46,15 +49,8 @@ class MarketCtp final : public IMarket, public CThostFtdcMdSpi {
   virtual void OnRtnForQuoteRsp(
       CThostFtdcForQuoteRspField *pForQuoteRsp) override;
 
- public:
-  MarketCtp(std::string config_path);
-  virtual ~MarketCtp();
-
  private:
-  [[nodiscard]] int login();
-
- private:
-  int _requestId = 0;
+  std::atomic_int _requestId = 0;
   std::string _frontAddr;
   std::string _brokerId;
   std::string _investorId;
@@ -63,6 +59,8 @@ class MarketCtp final : public IMarket, public CThostFtdcMdSpi {
   bool _isUsingUdp;
   bool _isMulticast;
   CThostFtdcMdApi *_mdApi;
+
+  [[nodiscard]] int login();
 };
 
 }  // namespace wss

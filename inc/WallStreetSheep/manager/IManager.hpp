@@ -3,4 +3,5 @@
 class IManager {
  public:
   virtual void start() = 0;
+  virtual ~IManager() {}
 };

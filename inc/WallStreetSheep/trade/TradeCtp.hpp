@@ -3,6 +3,8 @@
 #include <unicode/ucnv.h>
 #include <unicode/unistr.h>
 
+#include <atomic>
+#include <map>
 #include <string>
 
 #include "WallStreetSheep/trade/ITrade.hpp"
@@ -10,8 +12,19 @@
 
 namespace wss {
 
+class ManagerCtp;
+
 class TradeCtp final : public ITrade, public CThostFtdcTraderSpi {
  public:
+  friend class ManagerCtp;
+
+  TradeCtp(std::string configPath);
+  virtual ~TradeCtp();
+
+  void ReqQrySettlementInfo();
+  void ReqQryInvestorPosition();
+  void ReqQryInstrument();
+
   virtual void init() override;
   virtual void start() override;
   virtual void disconnect() override;
@@ -45,18 +58,8 @@ class TradeCtp final : public ITrade, public CThostFtdcTraderSpi {
   virtual void OnRtnOrder(CThostFtdcOrderField *pOrder) override;
   virtual void OnRtnTrade(CThostFtdcTradeField *pTrade) override;
 
- public:
-  TradeCtp(std::string config_path);
-  virtual ~TradeCtp();
-  void ReqQrySettlementInfo();
-  void ReqQryInvestorPosition();
-  void ReqQryInstrument();
-
  private:
-  [[nodiscard]] int login();
-
- private:
-  int _requestId = 0;
+  std::atomic_int _requestId = 0;
   std::string _frontAddr;
   std::string _brokerId;
   std::string _investorId;
@@ -67,6 +70,10 @@ class TradeCtp final : public ITrade, public CThostFtdcTraderSpi {
   int _sessionId;
   int _maxOrderRef;
   int _tradingDay;
+  std::map<std::string, std::shared_ptr<CThostFtdcInstrumentField>>
+      _instruments={};
+
+  [[nodiscard]] int login();
 };
 
 }  // namespace wss

@@ -10,7 +10,6 @@
 inline std::string Encode(const std::string& from, const std::string& to,
                    const std::string& source) {
   int source_len = source.length();
-  spdlog::info("{0}", source_len);
   int target_len = source_len * 4;
   std::unique_ptr<char[]> target(new char[target_len]);
   //   UErrorCode error = U_ZERO_ERROR;
@@ -26,4 +25,4 @@ inline std::string Encode(const std::string& from, const std::string& to,
 inline std::string EncodeUtf8(const std::string&& from, const std::string&& source) {
   std::string to = "utf8";
   return Encode(from, to, source);
-}
+} 

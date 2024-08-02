@@ -4,6 +4,7 @@ project(WallStreetSheep LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O1 -fPIE -pie -g -fsanitize=thread")
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -11,18 +12,22 @@ find_package(nlohmann_json REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(libpqxx REQUIRED)
+
 # find_package(fmt REQUIRED)
 find_package(ICU COMPONENTS data uc i18n io REQUIRED)
+find_package(concurrentqueue REQUIRED)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/common COMMON)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/db DB)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/market MARKET)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/trade TRADE)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/manager MANAGER)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp
   ${COMMON}
   ${DB}
   ${MARKET}
   ${TRADE}
+  ${MANAGER}
 )
 target_include_directories(
   ${PROJECT_NAME}
@@ -37,6 +42,7 @@ target_link_libraries(
   PUBLIC yaml-cpp::yaml-cpp
   PUBLIC spdlog::spdlog
   PUBLIC libpqxx::pqxx
+
   # PUBLIC fmt::fmt
   PUBLIC ICU::data
   PUBLIC ICU::uc

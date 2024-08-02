@@ -3,8 +3,9 @@
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 
-#include <boost/asio/post.hpp>
-#include <memory>
+#include <atomic>
+
+#include "WallStreetSheep/common/common.hpp"
 
 namespace wss {
 
@@ -18,14 +19,33 @@ Postgres::Postgres(std::string path) {
   _database = postgres_config["database"].as<std::string>();
   _dsn = fmt::format("host={} port={} user={} password={} dbname={}", _host,
                      _port, _user, _password, _database);
-  _conn = std::make_unique<pqxx::connection>(_dsn);
+
+  _startWriteQueue();
+  _startReadQueue();
 }
 
-std::unique_ptr<pqxx::work> Postgres::newWork() {
-  if (_conn == nullptr || !_conn->is_open()) {
-    _conn = std::make_unique<pqxx::connection>(_dsn);
+void Postgres::_startWriteQueue() {
+  static std::atomic_int cnt = 0;
+  for (int i = 0; i < _n; ++i) {
+    postTask([this, &cnt]() {
+      auto _conn = pqxx::connection(this->_dsn);
+      while (true) {
+        try {
+          std::function<void(pqxx::connection&)> f;
+          this->_writeQueue.wait_dequeue(f);
+          // SPDLOG_INFO("-----------------------{}-{}",
+          //             this->_writeQueue.size_approx(), ++cnt);
+          if (!_conn.is_open()) {
+            _conn = pqxx::connection(_dsn);
+          }
+          f(_conn);
+        } catch (std::exception& e) {
+          SPDLOG_ERROR("write pg failed, exception={}", e.what());
+        }
+      }
+    });
   }
-  return std::make_unique<pqxx::work>(*_conn);
 }
 
+void Postgres::_startReadQueue() {}
 }  // namespace wss
