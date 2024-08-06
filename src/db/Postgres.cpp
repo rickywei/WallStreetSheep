@@ -5,7 +5,7 @@
 
 #include <atomic>
 
-#include "WallStreetSheep/common/common.hpp"
+#include "WallStreetSheep/common/thread.hpp"
 
 namespace wss {
 
@@ -25,16 +25,13 @@ Postgres::Postgres(std::string path) {
 }
 
 void Postgres::_startWriteQueue() {
-  static std::atomic_int cnt = 0;
   for (int i = 0; i < _n; ++i) {
-    postTask([this, &cnt]() {
+    postTask([this]() {
       auto _conn = pqxx::connection(this->_dsn);
       while (true) {
         try {
           std::function<void(pqxx::connection&)> f;
           this->_writeQueue.wait_dequeue(f);
-          // SPDLOG_INFO("-----------------------{}-{}",
-          //             this->_writeQueue.size_approx(), ++cnt);
           if (!_conn.is_open()) {
             _conn = pqxx::connection(_dsn);
           }

@@ -4,8 +4,8 @@ project(WallStreetSheep LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O1 -fPIE -pie -g -fsanitize=thread")
 
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O1 -fPIE -pie -g -fsanitize=thread")
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(nlohmann_json REQUIRED)
@@ -16,17 +16,16 @@ find_package(libpqxx REQUIRED)
 # find_package(fmt REQUIRED)
 find_package(ICU COMPONENTS data uc i18n io REQUIRED)
 find_package(concurrentqueue REQUIRED)
+find_package(range-v3 REQUIRED)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/common COMMON)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/db DB)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/market MARKET)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/trade TRADE)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/ctp CTP)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/manager MANAGER)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp
   ${COMMON}
   ${DB}
-  ${MARKET}
-  ${TRADE}
+  ${CTP}
   ${MANAGER}
 )
 target_include_directories(
@@ -48,4 +47,5 @@ target_link_libraries(
   PUBLIC ICU::uc
   PUBLIC ICU::i18n
   PUBLIC ICU::io
+  PUBLIC range-v3::range-v3
 )

@@ -15,10 +15,6 @@ class Postgres final {
 
   template <typename... Args>
   void write(std::string q, Args... args) const {
-    // auto conn = pqxx::connection("");
-    // auto work = std::make_unique<pqxx::work>(conn);
-    // work->exec_params(q, std::forward<Args>(args)...);
-    // auto params=pqxx::params{std::forward<Args>(args)...};
     _writeQueue.enqueue([q = std::move(q), ... args = std::forward<Args>(args)](
                             pqxx::connection& conn) {
       auto work = pqxx::work(conn);

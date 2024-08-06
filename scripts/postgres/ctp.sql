@@ -1,7 +1,7 @@
 -- Active: 1722473306304@@127.0.0.1@5432@wallstreetsheep
 CREATE DATABASE WallStreetSheep;
 
-CREATE TABLE MarketCtp (
+CREATE TABLE Market (
     TradingDay TEXT NOT NULL,
     -- reserve1 TEXT NOT NULL,
     ExchangeID TEXT NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE MarketCtp (
     )
 );
 
-CREATE TABLE InstrumentCtp (
+CREATE TABLE Instrument (
     -- reserve1 TEXT NOT NULL,
     ExchangeID TEXT NOT NULL,
     InstrumentName TEXT NOT NULL,

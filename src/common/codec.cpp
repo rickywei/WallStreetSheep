@@ -1,4 +1,3 @@
-#pragma once
 
 #include <spdlog/spdlog.h>
 #include <unicode/ucnv.h>
@@ -7,7 +6,9 @@
 #include <memory>
 #include <string>
 
-inline std::string Encode(const std::string& from, const std::string& to,
+namespace wss {
+
+std::string Encode(const std::string& from, const std::string& to,
                    const std::string& source) {
   int source_len = source.length();
   int target_len = source_len * 4;
@@ -22,7 +23,9 @@ inline std::string Encode(const std::string& from, const std::string& to,
   return std::string(target.get());
 }
 
-inline std::string EncodeUtf8(const std::string&& from, const std::string&& source) {
+std::string EncodeUtf8(const std::string&& from, const std::string&& source) {
   std::string to = "utf8";
   return Encode(from, to, source);
-} 
+}
+
+}  // namespace wss
