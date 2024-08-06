@@ -5,7 +5,7 @@
 
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <range/v3/view/enumerate.hpp>
+#include <range/v3/all.hpp>
 
 #include "WallStreetSheep/common/codec.hpp"
 #include "WallStreetSheep/common/thread.hpp"
@@ -36,7 +36,7 @@ void Market::start() {
   _mdApi->RegisterSpi(this);
   _mdApi->RegisterFront(const_cast<char *>(_frontAddr.c_str()));
   _mdApi->Init();
-  _logged.wait(false);
+  _started.wait(false);
   SPDLOG_INFO("inited");
   postTask([this]() {
     int ret = this->_mdApi->Join();
@@ -79,8 +79,6 @@ void Market::OnFrontConnected() {
     SPDLOG_ERROR("ret = {}", ret);
     return;
   }
-  _logged.store(true, std::memory_order_release);
-  _logged.notify_one();
 }
 
 void Market::OnFrontDisconnected(int nReason) {
@@ -95,8 +93,9 @@ void Market::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                  EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
     return;
   }
-  _logged.store(true, std::memory_order_release);
-  _logged.notify_one();
+
+  _started.store(true, std::memory_order_release);
+  _started.notify_one();
 }
 
 void Market::OnRspSubMarketData(
@@ -111,8 +110,7 @@ void Market::OnRspSubMarketData(
 
 void Market::OnRtnDepthMarketData(
     CThostFtdcDepthMarketDataField *pDepthMarketData) {
-  auto sp =
-      deepCopyToSharedPtr<CThostFtdcDepthMarketDataField>(pDepthMarketData);
+  auto sp = toMarketData(pDepthMarketData);
   _db->write(
       R"(INSERT INTO
         Market(TradingDay, ExchangeID,  LastPrice,

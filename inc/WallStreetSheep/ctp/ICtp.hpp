@@ -20,7 +20,7 @@ class ICtp {
  protected:
   const std::string _configPath;
   std::unique_ptr<Postgres> _db;
-  std::atomic_bool _logged = false;
+  std::atomic_bool _started = false;
 };
 
 }  // namespace wss

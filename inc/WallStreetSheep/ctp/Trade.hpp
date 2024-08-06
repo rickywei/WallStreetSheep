@@ -15,6 +15,9 @@ namespace wss {
 
 class Trade final : public ICtp, public CThostFtdcTraderSpi {
  public:
+  std::map<std::string, std::shared_ptr<InstrumentData>>
+      instruments = {};
+
   Trade(std::string configPath);
   virtual ~Trade();
 
@@ -78,8 +81,6 @@ class Trade final : public ICtp, public CThostFtdcTraderSpi {
   int _sessionId;
   int _maxOrderRef;
   int _tradingDay;
-  std::map<std::string, std::shared_ptr<CThostFtdcInstrumentField>>
-      _instruments = {};
 
   [[nodiscard]] int login();
 };

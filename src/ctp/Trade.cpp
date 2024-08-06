@@ -35,7 +35,7 @@ void Trade::start() {
   _tdApi->SubscribePrivateTopic(THOST_TERT_QUICK);
   _tdApi->SubscribePublicTopic(THOST_TERT_QUICK);
   _tdApi->Init();
-  _logged.wait(false);
+  _started.wait(false);
   SPDLOG_INFO("inited");
   postTask([this]() {
     int ret = this->_tdApi->Join();
@@ -74,8 +74,7 @@ void Trade::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
   _maxOrderRef = atoi(pRspUserLogin->MaxOrderRef);
   _tradingDay = atoi(_tdApi->GetTradingDay());
 
-  _logged.store(true, std::memory_order_release);
-  _logged.notify_one();
+  querySettlementInfo();
 }
 
 void Trade::OnRspQrySettlementInfo(
@@ -94,6 +93,8 @@ void Trade::OnRspQrySettlementInfo(
   if (bIsLast) {
     SPDLOG_INFO("\n{}", EncodeUtf8("GBK", std::move(id2content[nRequestID])));
     id2content.erase(nRequestID);
+
+    confirmSettlementInfo();
   }
 }
 
@@ -106,6 +107,8 @@ void Trade::OnRspSettlementInfoConfirm(
                  EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
     return;
   }
+
+  queryInstrument();
 }
 
 void Trade::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument,
@@ -117,10 +120,13 @@ void Trade::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument,
                  EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
     return;
   }
-  auto sp = deepCopyToSharedPtr<CThostFtdcInstrumentField>(pInstrument);
-  _instruments[pInstrument->InstrumentID] = sp;
+  auto sp = toInstrumentData(pInstrument);
+  instruments[pInstrument->InstrumentID] = sp;
   if (bIsLast) {
-    SPDLOG_INFO("nRequestID={}, total={}", nRequestID, _instruments.size());
+    SPDLOG_INFO("nRequestID={}, total={}", nRequestID, instruments.size());
+
+    _started.store(true, std::memory_order_release);
+    _started.notify_one();
   }
   _db->write(
       R"(INSERT INTO
@@ -136,18 +142,16 @@ void Trade::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument,
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
                    $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
                    $27, $28, $29, $30, $31) ON CONFLICT DO NOTHING)",
-      sp->ExchangeID, EncodeUtf8("GBK", std::string(sp->InstrumentName)),
-      std::string(1, sp->ProductClass), sp->DeliveryYear, sp->DeliveryMonth,
-      sp->MaxMarketOrderVolume, sp->MinMarketOrderVolume,
+      sp->ExchangeID, sp->InstrumentName, sp->ProductClass, sp->DeliveryYear,
+      sp->DeliveryMonth, sp->MaxMarketOrderVolume, sp->MinMarketOrderVolume,
       sp->MaxLimitOrderVolume, sp->MinLimitOrderVolume, sp->VolumeMultiple,
       sp->PriceTick, sp->CreateDate, sp->OpenDate, sp->ExpireDate,
-      sp->StartDelivDate, sp->EndDelivDate, std::string(1, sp->InstLifePhase),
-      sp->IsTrading, std::string(1, sp->PositionType),
-      std::string(1, sp->PositionDateType), sp->LongMarginRatio,
-      sp->ShortMarginRatio, std::string(1, sp->MaxMarginSideAlgorithm),
-      sp->StrikePrice, std::string(1, sp->OptionsType), sp->UnderlyingMultiple,
-      std::string(1, sp->CombinationType), sp->InstrumentID, sp->ExchangeInstID,
-      sp->ProductID, sp->UnderlyingInstrID);
+      sp->StartDelivDate, sp->EndDelivDate, sp->InstLifePhase, sp->IsTrading,
+      sp->PositionType, sp->PositionDateType, sp->LongMarginRatio,
+      sp->ShortMarginRatio, sp->MaxMarginSideAlgorithm, sp->StrikePrice,
+      sp->OptionsType, sp->UnderlyingMultiple, sp->CombinationType,
+      sp->InstrumentID, sp->ExchangeInstID, sp->ProductID,
+      sp->UnderlyingInstrID);
 }
 
 void Trade::OnRspQryInvestorPosition(
