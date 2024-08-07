@@ -1,9 +1,9 @@
-#include "WallStreetSheep/ctp/utils.hpp"
+#include "ctp/utils.hpp"
 
 #include <cstring>
 
-#include "WallStreetSheep/common/codec.hpp"
-#include "api/ctp_v6.7.2/ThostFtdcUserApiStruct.h"
+#include "common/codec.hpp"
+#include "ctp_v6.7.2/ThostFtdcUserApiStruct.h"
 
 namespace wss {
 

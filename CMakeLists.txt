@@ -22,6 +22,7 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/src/common COMMON)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/db DB)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/ctp CTP)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/manager MANAGER)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/strategy)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp
   ${COMMON}
   ${DB}
@@ -30,8 +31,7 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp
 )
 target_include_directories(
   ${PROJECT_NAME}
-  PUBLIC ${PROJECT_SOURCE_DIR}/inc
-  PUBLIC ${PROJECT_SOURCE_DIR}/api
+  PUBLIC ${PROJECT_SOURCE_DIR}/src
 )
 target_link_libraries(
   ${PROJECT_NAME}

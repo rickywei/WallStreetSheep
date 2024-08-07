@@ -1,11 +1,11 @@
-#include "WallStreetSheep/db/Postgres.hpp"
+#include "db/Postgres.hpp"
 
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 
 #include <atomic>
 
-#include "WallStreetSheep/common/thread.hpp"
+#include "common/thread.hpp"
 
 namespace wss {
 

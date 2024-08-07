@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "api/ctp_v6.7.2/ThostFtdcUserApiStruct.h"
+#include "../ctp_v6.7.2/ThostFtdcUserApiStruct.h"
 
 namespace wss {
 

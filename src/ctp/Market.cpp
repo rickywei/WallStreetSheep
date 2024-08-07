@@ -1,4 +1,4 @@
-#include "WallStreetSheep/ctp/Market.hpp"
+#include "ctp/Market.hpp"
 
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
@@ -7,9 +7,9 @@
 #include <nlohmann/json.hpp>
 #include <range/v3/all.hpp>
 
-#include "WallStreetSheep/common/codec.hpp"
-#include "WallStreetSheep/common/thread.hpp"
-#include "WallStreetSheep/ctp/utils.hpp"
+#include "common/codec.hpp"
+#include "common/thread.hpp"
+#include "ctp/utils.hpp"
 
 namespace wss {
 

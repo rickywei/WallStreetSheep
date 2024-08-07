@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_set>
 
-#include "WallStreetSheep/db/Postgres.hpp"
+#include "../db/Postgres.hpp"
 
 namespace wss {
 

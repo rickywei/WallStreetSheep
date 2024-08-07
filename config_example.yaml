@@ -20,3 +20,8 @@ trade:
   investor_id: "123456"
   password: "password"
   flow_path: flow
+
+strategy:
+  names:
+    - dt
+    - xx

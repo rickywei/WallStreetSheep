@@ -1,7 +1,7 @@
 #pragma once
 
-#include "WallStreetSheep/ctp/ICtp.hpp"
-#include "api/ctp_v6.7.2/ThostFtdcMdApi.h"
+#include "../ctp/ICtp.hpp"
+#include "../ctp_v6.7.2/ThostFtdcMdApi.h"
 
 namespace wss {
 

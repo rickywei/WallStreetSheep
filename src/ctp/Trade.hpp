@@ -7,9 +7,9 @@
 #include <map>
 #include <string>
 
-#include "WallStreetSheep/ctp/ICtp.hpp"
-#include "WallStreetSheep/ctp/utils.hpp"
-#include "api/ctp_v6.7.2/ThostFtdcTraderApi.h"
+#include "../ctp/ICtp.hpp"
+#include "../ctp/utils.hpp"
+#include "../ctp_v6.7.2/ThostFtdcTraderApi.h"
 
 namespace wss {
 
