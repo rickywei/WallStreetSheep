@@ -2,8 +2,8 @@
 
 #include <cstring>
 
-#include "common/codec.hpp"
-#include "ctp_v6.7.2/ThostFtdcUserApiStruct.h"
+#include "../common/codec.hpp"
+#include "../ctp_v6.7.2/ThostFtdcUserApiStruct.h"
 
 namespace wss {
 

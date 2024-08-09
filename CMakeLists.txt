@@ -21,23 +21,30 @@ find_package(range-v3 REQUIRED)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/common COMMON)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/db DB)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/ctp CTP)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/context CONTEXT)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/manager MANAGER)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/strategy)
+
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp
   ${COMMON}
   ${DB}
   ${CTP}
+  ${CONTEXT}
   ${MANAGER}
 )
+
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC ${PROJECT_SOURCE_DIR}/src
 )
+
 target_link_libraries(
   ${PROJECT_NAME}
   PUBLIC ${PROJECT_SOURCE_DIR}/lib/ctp_v6.7.2/libthostmduserapi_se.so
   PUBLIC ${PROJECT_SOURCE_DIR}/lib/ctp_v6.7.2/libthosttraderapi_se.so
-  PUBLIC nlohmann_json::nlohmann_json
+
+  # PUBLIC nlohmann_json::nlohmann_json
   PUBLIC yaml-cpp::yaml-cpp
   PUBLIC spdlog::spdlog
   PUBLIC libpqxx::pqxx

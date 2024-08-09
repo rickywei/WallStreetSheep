@@ -5,7 +5,7 @@
 
 #include <atomic>
 
-#include "common/thread.hpp"
+#include "../common/thread.hpp"
 
 namespace wss {
 

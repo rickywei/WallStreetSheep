@@ -7,9 +7,9 @@
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 
-#include "common/codec.hpp"
-#include "common/thread.hpp"
-#include "ctp/utils.hpp"
+#include "../common/codec.hpp"
+#include "../common/thread.hpp"
+#include "../ctp/utils.hpp"
 
 namespace wss {
 

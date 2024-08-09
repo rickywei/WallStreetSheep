@@ -22,6 +22,9 @@ trade:
   flow_path: flow
 
 strategy:
-  names:
-    - dt
-    - xx
+  backtest:
+    - example
+  simulate:
+    - example
+  live:
+    - example

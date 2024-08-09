@@ -1,4 +1,4 @@
-#include "ctp/Market.hpp"
+#include "../ctp/Market.hpp"
 
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
@@ -7,9 +7,9 @@
 #include <nlohmann/json.hpp>
 #include <range/v3/all.hpp>
 
-#include "common/codec.hpp"
-#include "common/thread.hpp"
-#include "ctp/utils.hpp"
+#include "../common/codec.hpp"
+#include "../common/thread.hpp"
+#include "../ctp/utils.hpp"
 
 namespace wss {
 
@@ -44,7 +44,7 @@ void Market::start() {
   });
 }
 
-int Market::subscribe(std::unordered_set<std::string> &instrumentIds) {
+int Market::subscribe(std::vector<std::string> &instrumentIds) {
   size_t n = instrumentIds.size();
   auto ppInstrumentID = std::make_unique<char *[]>(n);
   for (const auto &[i, s] : instrumentIds | ranges::views::enumerate) {
@@ -55,7 +55,7 @@ int Market::subscribe(std::unordered_set<std::string> &instrumentIds) {
   return ret;
 }
 
-int Market::unsubscribe(std::unordered_set<std::string> &instrumentIds) {
+int Market::unsubscribe(std::vector<std::string> &instrumentIds) {
   size_t n = instrumentIds.size();
   auto ppInstrumentID = std::make_unique<char *[]>(n);
   for (const auto &[i, s] : instrumentIds | ranges::views::enumerate) {

@@ -1,35 +1,16 @@
 #include "IStrategy.hpp"
 
-// #include <spdlog/spdlog.h>
-// #include <yaml-cpp/yaml.h>
-
-#include <vector>
+#include <spdlog/spdlog.h>
+#include <yaml-cpp/yaml.h>
 
 namespace wss {
 
-IStrategy::IStrategy(std::string name) : _name(name) {
-  // YAML::Node config = YAML::LoadFile(fmt::format("./{}.yaml", _name));
-
-  // auto subs = config["subs"].as<std::string>();
-  // mgr->strategySubscribe(shared_from_this(), subs);
-
-  //   onInit();
+IStrategy::IStrategy(std::shared_ptr<ICtx> ctx, std::string id)
+    : _ctx(ctx), _id(id), _logger(newLogger(id)) {
+  YAML::Node cfg = YAML::LoadFile(fmt::format("{}.yaml", _id));
+  _subs = cfg["subs"].as<std::vector<std::string>>();
 }
 
-IStrategy::~IStrategy() {}
-
-void IStrategy::longOpen() {}
-
-void IStrategy::longClose() {}
-
-void IStrategy::shortOpen() {}
-
-void IStrategy::shortClose() {}
-
-void IStrategy::backtest() {}
-
-void IStrategy::simulate() {}
-
-void IStrategy::online() {}
+std::vector<std::string> wss::IStrategy::getSubs() { return _subs; }
 
 }  // namespace wss

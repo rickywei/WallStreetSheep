@@ -13,8 +13,8 @@ class Market final : public ICtp, public CThostFtdcMdSpi {
   virtual void init() override;
   virtual void start() override;
 
-  int subscribe(std::unordered_set<std::string> &instrumentIds);
-  int unsubscribe(std::unordered_set<std::string> &instrumentIds);
+  int subscribe(std::vector<std::string> &instrumentIds);
+  int unsubscribe(std::vector<std::string> &instrumentIds);
 
   virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                           bool bIsLast) override;

@@ -1,4 +1,10 @@
 services:
+  aktools:
+    image: registry.cn-shanghai.aliyuncs.com/akfamily/aktools:1.8.95
+    container_name: aktools
+    ports:
+      - 8080:8080
+
   db:
     image: postgres
     container_name: postgres
@@ -10,12 +16,12 @@ services:
     ports:
       - 5432:5432
 
-  adminer:
-    image: adminer
-    container_name: adminer
-    restart: always
-    ports:
-      - 8080:8080
+  # adminer:
+  #   image: adminer
+  #   container_name: adminer
+  #   restart: always
+  #   ports:
+  #     - 8080:8080
 
   # pgbouncer:
   #   image: bitnami/pgbouncer
