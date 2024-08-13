@@ -2,10 +2,17 @@ services:
   aktools:
     image: registry.cn-shanghai.aliyuncs.com/akfamily/aktools:1.8.95
     container_name: aktools
+    restart: always
     ports:
       - 8080:8080
 
-  db:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - 6379:6379
+
+  pg:
     image: postgres
     container_name: postgres
     restart: always

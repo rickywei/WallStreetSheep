@@ -37,11 +37,11 @@ build
 # VSCode
 .vscode
 
-# config
-config.yaml
-
 # con
 *.con
 
 # docker
 ./volumes
+
+# logs
+logs

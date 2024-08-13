@@ -1,0 +1,14 @@
+log:
+  level: debug
+  console: true
+
+redis:
+  addr:
+    - 127.0.0.1:6379
+
+postgres:
+  host: "127.0.0.1"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  dbname: "WallStreetSheep"
