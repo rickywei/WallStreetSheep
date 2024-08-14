@@ -24,18 +24,18 @@ IStrategy::IStrategy(std::string id) : _id(id) {
 void IStrategy::subscribe() {
   if (!_subTicks.empty()) {
     postTask([this]() {
-      auto sub = this->_rc->subscriber();
+      auto ch = this->_rc->subscriber();
       auto v = this->_subTicks | ranges::views::transform([](std::string s) {
                  return fmt::format(chFmtTick, s);
                }) |
                ranges::to<std::vector>();
-      sub.subscribe(v.begin(), v.end());
-      sub.on_message([this](std::string channel, std::string msg) {
+      ch.subscribe(v.begin(), v.end());
+      ch.on_message([this](std::string channel, std::string msg) {
         SPDLOG_INFO("{}", msg);
         this->onTick(unmarshalTick(msg));
       });
       while (true) {
-        sub.consume();
+        ch.consume();
       }
     });
   }

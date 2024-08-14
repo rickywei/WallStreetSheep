@@ -13,7 +13,9 @@
 
 namespace wss {
 
-const std::string chInstrument = "ctpMarket";
+constexpr std::string chInstrument = "ctpMarket";
+constexpr std::string chSubs = "ctpSubs";
+constexpr std::string chFmtSubs = "ctpSubs:{}";
 
 Market::Market() {
   init();
@@ -33,8 +35,6 @@ void Market::init() {
   _isMulticast = conf["is_multicast"].as<bool>();
 
   _rc = std::make_unique<sw::redis::Redis>(conf["redisAddr"].as<std::string>());
-  // _ch = std::make_unique<sw::redis::Subscriber>(_rc->subscriber());
-  // _ch->subscribe(channel);
 }
 
 void Market::start() {
@@ -95,8 +95,22 @@ void Market::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                  EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
     return;
   }
-  std::vector<std::string> v = {"au2410"};
-  this->subscribe(v);
+  postTask([this]() {
+    std::vector<std::string> v;
+    _rc->smembers(fmt::format(chFmtSubs, Date()), std::inserter(v, v.begin()));
+    this->subscribe(v);
+
+    auto ch = _rc->subscriber();
+    ch.subscribe(chSubs);
+    ch.on_message([this](std::string channel, std::string msg) {
+      SPDLOG_INFO("instrumentId={}", msg);
+      std::vector<std::string> v{msg};
+      this->subscribe(v);
+    });
+    while (true) {
+      ch.consume();
+    }
+  });
 }
 
 void Market::OnRspSubMarketData(

@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,6 +22,8 @@ const (
 	chMarket     = "ctpMarket"
 	chInstrument = "ctpInstrument"
 	chFmtTick    = "ctpTick:%s"
+	chSubs       = "ctpSubs"
+	chFmtSubs    = "ctpSubs:%s"
 )
 
 var (
@@ -55,6 +59,7 @@ func RunCtp() error {
 	ps := rc.Subscribe(ctx, chMarket, chInstrument)
 	defer ps.Close()
 	ch := ps.Channel()
+	tk := time.NewTicker(time.Hour)
 	for {
 		select {
 		case msg := <-ch:
@@ -65,15 +70,36 @@ func RunCtp() error {
 					continue
 				}
 				writeDb(ctx, db, cm)
-				t := cm.ToTick()
-				publish(ctx, rc, fmt.Sprintf(chFmtTick, t.InstrumentId), t)
+				if t := cm.ToTick(); t != nil {
+					publish(ctx, rc, fmt.Sprintf(chFmtTick, t.InstrumentId), t)
+				}
 			case chInstrument:
 				ct, err := NewCtpMarket(msg.Payload)
 				if err != nil {
 					continue
 				}
 				writeDb(ctx, db, ct)
+				if strings.Contains(*ct.InstrumentID, "rb") {
+					fmt.Println(*ct.InstrumentID)
+					publish(ctx, rc, chSubs, ct.InstrumentID)
+					k := fmt.Sprintf(chFmtSubs, time.Now().Format(time.DateOnly))
+					if _, err := rc.SAdd(ctx, k, *ct.InstrumentID).Result(); err != nil {
+						logger.L().Fatal("sadd failed", zap.String("instrumentId", *ct.InstrumentID), zap.Error(err))
+						continue
+					}
+					rc.Expire(ctx, k, time.Hour*24)
+				}
 			}
+		case <-tk.C:
+			k := fmt.Sprintf(chFmtSubs, time.Now().Format(time.DateOnly))
+			subs, err := rc.SMembers(ctx, k).Result()
+			if err != nil {
+				logger.L().Fatal("smembers failed", zap.Error(err))
+				continue
+			}
+			lo.ForEach(subs, func(sub string, _ int) {
+				publish(ctx, rc, chSubs, &sub)
+			})
 		case <-ctx.Done():
 			return errors.New("ctx done")
 		}
@@ -84,9 +110,9 @@ func StopCtp() {
 	cancel()
 }
 
-type CtpMarket struct {
-	TradingDay         *string  `gorm:"column:TradingDay"`
-	ExchangeID         *string  `gorm:"column:ExchangeID"`
+type CtpTick struct {
+	TradingDay *string `gorm:"column:TradingDay"`
+	// ExchangeID         *string  `gorm:"column:ExchangeID"`
 	LastPrice          *float64 `gorm:"column:LastPrice"`
 	PreSettlementPrice *float64 `gorm:"column:PreSettlementPrice"`
 	PreClosePrice      *float64 `gorm:"column:PreClosePrice"`
@@ -109,41 +135,44 @@ type CtpMarket struct {
 	BidVolume1         *float64 `gorm:"column:BidVolume1"`
 	AskPrice1          *float64 `gorm:"column:AskPrice1"`
 	AskVolume1         *float64 `gorm:"column:AskVolume1"`
-	BidPrice2          *float64 `gorm:"column:BidPrice2"`
-	BidVolume2         *float64 `gorm:"column:BidVolume2"`
-	AskPrice2          *float64 `gorm:"column:AskPrice2"`
-	AskVolume2         *float64 `gorm:"column:AskVolume2"`
-	BidPrice3          *float64 `gorm:"column:BidPrice3"`
-	BidVolume3         *float64 `gorm:"column:BidVolume3"`
-	AskPrice3          *float64 `gorm:"column:AskPrice3"`
-	AskVolume3         *float64 `gorm:"column:AskVolume3"`
-	BidPrice4          *float64 `gorm:"column:BidPrice4"`
-	BidVolume4         *float64 `gorm:"column:BidVolume4"`
-	AskPrice4          *float64 `gorm:"column:AskPrice4"`
-	AskVolume4         *float64 `gorm:"column:AskVolume4"`
-	BidPrice5          *float64 `gorm:"column:BidPrice5"`
-	BidVolume5         *float64 `gorm:"column:BidVolume5"`
-	AskPrice5          *float64 `gorm:"column:AskPrice5"`
-	AskVolume5         *float64 `gorm:"column:AskVolume5"`
-	AveragePrice       *float64 `gorm:"column:AveragePrice"`
-	ActionDay          *string  `gorm:"column:ActionDay"`
-	InstrumentID       *string  `gorm:"column:InstrumentID"`
-	ExchangeInstID     *string  `gorm:"column:ExchangeInstID"`
-	BandingUpperPrice  *float64 `gorm:"column:BandingUpperPrice"`
-	BandingLowerPrice  *float64 `gorm:"column:BandingLowerPrice"`
+	// BidPrice2          *float64 `gorm:"column:BidPrice2"`
+	// BidVolume2         *float64 `gorm:"column:BidVolume2"`
+	// AskPrice2          *float64 `gorm:"column:AskPrice2"`
+	// AskVolume2         *float64 `gorm:"column:AskVolume2"`
+	// BidPrice3          *float64 `gorm:"column:BidPrice3"`
+	// BidVolume3         *float64 `gorm:"column:BidVolume3"`
+	// AskPrice3          *float64 `gorm:"column:AskPrice3"`
+	// AskVolume3         *float64 `gorm:"column:AskVolume3"`
+	// BidPrice4          *float64 `gorm:"column:BidPrice4"`
+	// BidVolume4         *float64 `gorm:"column:BidVolume4"`
+	// AskPrice4          *float64 `gorm:"column:AskPrice4"`
+	// AskVolume4         *float64 `gorm:"column:AskVolume4"`
+	// BidPrice5          *float64 `gorm:"column:BidPrice5"`
+	// BidVolume5         *float64 `gorm:"column:BidVolume5"`
+	// AskPrice5          *float64 `gorm:"column:AskPrice5"`
+	// AskVolume5         *float64 `gorm:"column:AskVolume5"`
+	AveragePrice *float64 `gorm:"column:AveragePrice"`
+	ActionDay    *string  `gorm:"column:ActionDay"`
+	InstrumentID *string  `gorm:"column:InstrumentID"`
+	// ExchangeInstID     *string  `gorm:"column:ExchangeInstID"`
+	// BandingUpperPrice  *float64 `gorm:"column:BandingUpperPrice"`
+	// BandingLowerPrice  *float64 `gorm:"column:BandingLowerPrice"`
+	TS *int64 `gorm:"column:TS"`
 }
 
-func (c *CtpMarket) TableName() string {
-	return "CtpMarket"
+func (c *CtpTick) TableName() string {
+	return "CtpTick"
 }
 
-func (c *CtpMarket) ToTick() *Tick {
-	tm, _ := time.Parse("20060102 15:04:05.000 -0700", fmt.Sprintf("%s %s.%03d +0800", *c.TradingDay, *c.UpdateTime, *c.UpdateMillisec))
+func (c *CtpTick) ToTick() *Tick {
+	defer func() {
+		recover()
+	}()
 	return &Tick{
 		InstrumentId: *c.InstrumentID,
-		TS:           tm.UnixMilli(),
-		Price:        *c.LastPrice,
+		TS:           *c.TS,
 		Open:         *c.OpenPrice,
+		Close:        *c.ClosePrice,
 		Highest:      *c.HighestPrice,
 		Lowest:       *c.LowestPrice,
 		Volume:       *c.Volume,
@@ -151,12 +180,14 @@ func (c *CtpMarket) ToTick() *Tick {
 	}
 }
 
-func NewCtpMarket(str string) (c *CtpMarket, err error) {
-	c = &CtpMarket{}
+func NewCtpMarket(str string) (c *CtpTick, err error) {
+	c = &CtpTick{}
 	err = json.Unmarshal([]byte(str), c)
 	if err != nil {
 		logger.L().Error("unmarshal ctp failed", zap.String("msg", str), zap.Error(err))
 	}
+	tm, _ := time.Parse("20060102 15:04:05.000 -0700", fmt.Sprintf("%s %s.%03d +0800", *c.TradingDay, *c.UpdateTime, *c.UpdateMillisec))
+	c.TS = lo.ToPtr(tm.UnixMilli())
 	return
 }
 

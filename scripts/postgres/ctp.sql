@@ -1,10 +1,10 @@
 -- Active: 1722473306304@@127.0.0.1@5432@WallStreetSheep
 CREATE DATABASE "WallStreetSheep";
 
-CREATE TABLE "CtpMarket" (
+CREATE TABLE "CtpTick" (
     "TradingDay" TEXT,
     -- "reserve1" TEXT,
-    "ExchangeID" TEXT,
+    -- "ExchangeID" TEXT,
     -- "reserve2" TEXT,
     "LastPrice" DOUBLE PRECISION,
     "PreSettlementPrice" DOUBLE PRECISION,
@@ -28,28 +28,29 @@ CREATE TABLE "CtpMarket" (
     "BidVolume1" DOUBLE PRECISION,
     "AskPrice1" DOUBLE PRECISION,
     "AskVolume1" DOUBLE PRECISION,
-    "BidPrice2" DOUBLE PRECISION,
-    "BidVolume2" DOUBLE PRECISION,
-    "AskPrice2" DOUBLE PRECISION,
-    "AskVolume2" DOUBLE PRECISION,
-    "BidPrice3" DOUBLE PRECISION,
-    "BidVolume3" DOUBLE PRECISION,
-    "AskPrice3" DOUBLE PRECISION,
-    "AskVolume3" DOUBLE PRECISION,
-    "BidPrice4" DOUBLE PRECISION,
-    "BidVolume4" DOUBLE PRECISION,
-    "AskPrice4" DOUBLE PRECISION,
-    "AskVolume4" DOUBLE PRECISION,
-    "BidPrice5" DOUBLE PRECISION,
-    "BidVolume5" DOUBLE PRECISION,
-    "AskPrice5" DOUBLE PRECISION,
-    "AskVolume5" DOUBLE PRECISION,
+    -- "BidPrice2" DOUBLE PRECISION,
+    -- "BidVolume2" DOUBLE PRECISION,
+    -- "AskPrice2" DOUBLE PRECISION,
+    -- "AskVolume2" DOUBLE PRECISION,
+    -- "BidPrice3" DOUBLE PRECISION,
+    -- "BidVolume3" DOUBLE PRECISION,
+    -- "AskPrice3" DOUBLE PRECISION,
+    -- "AskVolume3" DOUBLE PRECISION,
+    -- "BidPrice4" DOUBLE PRECISION,
+    -- "BidVolume4" DOUBLE PRECISION,
+    -- "AskPrice4" DOUBLE PRECISION,
+    -- "AskVolume4" DOUBLE PRECISION,
+    -- "BidPrice5" DOUBLE PRECISION,
+    -- "BidVolume5" DOUBLE PRECISION,
+    -- "AskPrice5" DOUBLE PRECISION,
+    -- "AskVolume5" DOUBLE PRECISION,
     "AveragePrice" DOUBLE PRECISION,
     "ActionDay" TEXT,
     "InstrumentID" TEXT,
-    "ExchangeInstID" TEXT,
-    "BandingUpperPrice" DOUBLE PRECISION,
-    "BandingLowerPrice" DOUBLE PRECISION,
+    -- "ExchangeInstID" TEXT,
+    -- "BandingUpperPrice" DOUBLE PRECISION,
+    -- "BandingLowerPrice" DOUBLE PRECISION,
+    "TS" BIGINT,
     PRIMARY KEY (
         "InstrumentID",
         "UpdateTime",
@@ -95,3 +96,33 @@ CREATE TABLE "CtpInstrument" (
     "UnderlyingInstrID" TEXT,
     PRIMARY KEY ("InstrumentID")
 );
+
+CREATE VIEW "CtpBar1m" AS
+SELECT
+    "InstrumentID",
+    "TS" / 1000 / 60 * 1000 * 60 as "TS",
+    (
+        array_agg(
+            "LastPrice"
+            ORDER BY "TS" ASC
+        )
+    ) [1] AS "Open",
+    (
+        array_agg(
+            "LastPrice"
+            ORDER BY "TS" DESC
+        )
+    ) [1] AS "Close",
+    MAX("LastPrice") AS "Highest",
+    MIN("LastPrice") AS "LOWEST",
+    SUM("Volume") AS "Volume",
+    (
+        array_agg(
+            "OpenInterest"
+            ORDER BY "TS" DESC
+        )
+    ) [1] AS "Hold"
+FROM "CtpTick"
+GROUP BY
+    "InstrumentID",
+    ("TS" / 1000 / 60 * 1000 * 60);

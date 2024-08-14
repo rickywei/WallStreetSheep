@@ -29,6 +29,9 @@ func writeDb[T any](ctx context.Context, db *gorm.DB, data T) {
 }
 
 func publish[T any](ctx context.Context, rc redis.UniversalClient, ch string, data *T) {
+	if data == nil {
+		return
+	}
 	bs, err := json.Marshal(data)
 	if err != nil {
 		logger.L().Error("marshal failed", zap.Any("data", data))
