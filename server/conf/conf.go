@@ -4,6 +4,7 @@ import (
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/file"
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
@@ -13,7 +14,10 @@ var (
 )
 
 func init() {
-	f := file.Provider("./conf.yaml")
+	path := pflag.String("conf", "conf.yaml", "")
+	pflag.Parse()
+
+	f := file.Provider(*path)
 	if err := k.Load(f, p); err != nil {
 		zap.L().Fatal("init conf failed", zap.Error(err))
 	}

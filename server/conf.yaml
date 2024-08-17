@@ -12,3 +12,13 @@ postgres:
   user: "postgres"
   password: "postgres"
   dbname: "WallStreetSheep"
+
+ctp:
+  bin: "../build/WallStreetSheepCtp"
+  # frontAddr: tcp://180.168.146.187:10201
+  frontAddr: tcp://180.168.146.187:10130
+  brokerId: "9999"
+  investorId: "123456"
+  password: "123456"
+  flowPath: "../build"
+  redisAddr: tcp://127.0.0.1:6379

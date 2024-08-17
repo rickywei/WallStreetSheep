@@ -1,9 +1,0 @@
-# front_addr: tcp://180.168.146.187:10211
-front_addr: tcp://180.168.146.187:10131
-broker_id: "9999"
-investor_id: "123456"
-password: "123456"
-flow_path: flow
-is_using_udp: false
-is_multicast: false
-redisAddr: tcp://127.0.0.1:6379
