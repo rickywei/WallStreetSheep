@@ -5,7 +5,7 @@
 
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <unordered_set>
+#include <unordered_map>
 
 #include "codec.hpp"
 #include "thread.hpp"
@@ -289,12 +289,37 @@ void Trade::_confirmSettlementInfo() {
 }
 
 void Trade::_order(std::string str) {
-  auto req = CThostFtdcInputOrderField{};
+  auto req = CThostFtdcInputOrderField{
+      .TimeCondition = THOST_FTDC_TC_IOC,
+      .ContingentCondition = THOST_FTDC_CC_Immediately,
+  };
+  req.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
+  strcpy(req.BrokerID, _brokerId.c_str());
+  strcpy(req.InvestorID, _investorId.c_str());
   try {
     auto j = nlohmann::json::parse(str);
-
+    j.at("instrumentId").get_to(req.InstrumentID);
+    j.at("direction").get_to(req.Direction);
+    j.at("offset").get_to(req.CombOffsetFlag[0]);
+    j.at("volume").get_to(req.VolumeTotalOriginal);
+    j.at("price").get_to(req.LimitPrice);
+    if (req.LimitPrice == 0) {
+      req.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
+      req.TimeCondition = THOST_FTDC_TC_IOC;
+    } else {
+      req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
+      req.TimeCondition = THOST_FTDC_TC_GFD;
+    }
+    std::string mode;
+    j.at("mode").get_to(mode);
+    if (mode == "FAK") {
+      req.VolumeCondition = THOST_FTDC_VC_AV;
+    } else if (mode == "FOK") {
+      req.VolumeCondition = THOST_FTDC_VC_CV;
+    }
   } catch (const std::exception &e) {
     SPDLOG_ERROR("{}", e.what());
+    return;
   }
   if (int ret = _tdApi->ReqOrderInsert(&req, _getRequestId()); ret != 0) {
     SPDLOG_ERROR("ret={}", ret);
