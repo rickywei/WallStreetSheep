@@ -1,8 +1,9 @@
--- Active: 1723700851420@@127.0.0.1@5432@WallStreetSheep
+-- Active: 1722392652205@@127.0.0.1@5432@WallStreetSheep
 CREATE DATABASE "WallStreetSheep";
 
-
 CREATE TABLE "CtpInstrument" (
+    "CreatedAt" BIGINT,
+    "UpdatedAt" BIGINT,
     -- "reserve1" TEXT,
     "ExchangeID" TEXT,
     "InstrumentName" TEXT,
@@ -39,4 +40,34 @@ CREATE TABLE "CtpInstrument" (
     "ProductID" TEXT,
     "UnderlyingInstrID" TEXT,
     PRIMARY KEY ("InstrumentID")
+);
+
+CREATE TABLE "CtpOrder" (
+    "CreatedAt" BIGINT,
+    "UpdatedAt" BIGINT,
+    "ExchangeId" TEXT,
+    "InstrumentId" TEXT,
+    "Direction" TEXT,
+    "Offset" TEXT,
+    "Price" DOUBLE PRECISION,
+    "Volume" INT,
+    "Mode" TEXT,
+    "Date" TEXT,
+    "RequestId" INT,
+    "OrderSysId" TEXT,
+    "Status" TEXT,
+    "Error" TEXT,
+    PRIMARY KEY ("Date", "RequestId")
+);
+
+CREATE TABLE "CtpTrade" (
+    "CreatedAt" BIGINT,
+    "UpdatedAt" BIGINT,
+    "ExchangeId" TEXT,
+    "InstrumentId" TEXT,
+    "OrderSysId" TEXT,
+    "TradeId" TEXT,
+    "Price" DOUBLE PRECISION,
+    "Volume" INT,
+    "Error" TEXT
 );

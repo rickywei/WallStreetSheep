@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/run"
 	"go.uber.org/zap"
 
+	"github.com/rickywei/wallstreetsheep/api"
 	_ "github.com/rickywei/wallstreetsheep/conf"
 	"github.com/rickywei/wallstreetsheep/daemon"
 	"github.com/rickywei/wallstreetsheep/logger"
@@ -29,6 +30,13 @@ func main() {
 			return daemon.RunCtp()
 		}, func(err error) {
 			daemon.StopCtp()
+		})
+	}
+	{
+		rg.Add(func() error {
+			return api.RunApi()
+		}, func(err error) {
+			api.StopApi()
 		})
 	}
 	if err := rg.Run(); err != nil {

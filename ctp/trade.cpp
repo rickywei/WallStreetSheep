@@ -12,10 +12,15 @@
 
 namespace wss {
 
-constexpr std::string_view chCtpTradeHeartbeat = "ctpHeartbeat";
+constexpr std::string_view chCtpHeartbeat = "chCtpHeartbeat";
+constexpr std::string_view chCtpInstrument = "chCtpInstrument";
+constexpr std::string_view chCtpOrder = "chCtpOrder";
+constexpr std::string_view chCtpOnRspOrderInsert = "chCtpOnRspOrderInsert";
+constexpr std::string_view chCtpOnErrOrderInsert = "chCtpOnErrOrderInsert";
+constexpr std::string_view chCtpOnRtnOrder = "chCtpOnRtnOrder";
+constexpr std::string_view chCtpOnRtnTrade = "chCtpOnRtnTrade";
 constexpr std::string_view kFmtRequestId = "ctpRequestId:{}";
 constexpr std::string_view kFmtConfirmed = "ctpConfirmed:{}";
-constexpr std::string_view chCtpInstrument = "ctpInstrument";
 
 Trade::Trade(std::string str) {
   auto j = nlohmann::json::parse(str);
@@ -38,7 +43,7 @@ void Trade::start() {
   _tdApi->SubscribePrivateTopic(THOST_TERT_QUICK);
   _tdApi->SubscribePublicTopic(THOST_TERT_QUICK);
   _tdApi->Init();
-  _heartbeat();
+  _daemon();
   SPDLOG_INFO("inited");
   postTask([this]() {
     int ret = this->_tdApi->Join();
@@ -179,9 +184,14 @@ void Trade::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder,
                              CThostFtdcRspInfoField *pRspInfo, int nRequestID,
                              bool bIsLast) {
   if (pRspInfo != nullptr && pRspInfo->ErrorID != 0) {
+    auto msg = EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg));
     SPDLOG_ERROR("nRequestID={}, code={}, msg={} ", nRequestID,
-                 pRspInfo->ErrorID,
-                 EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
+                 pRspInfo->ErrorID, msg);
+    nlohmann::json j;
+    j["Date"] = Date();
+    j["RequestId"] = nRequestID;
+    j["Error"] = msg;
+    _rc->publish(chCtpOnRspOrderInsert, j.dump());
     return;
   }
 }
@@ -198,23 +208,44 @@ void Trade::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOrderAction,
 }
 
 void Trade::OnRtnOrder(CThostFtdcOrderField *pOrder) {
-  SPDLOG_INFO("{}", pOrder->OrderSysID);
-  // TODO callback
+  SPDLOG_INFO(
+      "RequestID={}, ExchangeID={}, InstrumentID, "
+      "OrderSysID={}, "
+      "OrderStatus={}",
+      pOrder->RequestID, pOrder->ExchangeID, pOrder->InstrumentID,
+      pOrder->OrderSysID, pOrder->OrderStatus);
+  nlohmann::json j;
+  j["TradingDay"] = pOrder->TradingDay;
+  j["RequestId"] = pOrder->RequestID;
+  j["OrderSysID"] = pOrder->OrderSysID;
+  j["Status"] = pOrder->OrderStatus;
+  _rc->publish(chCtpOnRtnOrder, j.dump());
 }
 
 void Trade::OnRtnTrade(CThostFtdcTradeField *pTrade) {
-  SPDLOG_INFO("{}", pTrade->OrderSysID);
-  // TODO callback
+  SPDLOG_INFO("ExchangeID={}, InstrumentID, OrderSysID={}, RequestID={}",
+              pTrade->ExchangeID, pTrade->InstrumentID, pTrade->OrderSysID,
+              pTrade->TradeID);
+  nlohmann::json j;
+  j["ExchangeID"] = pTrade->ExchangeID;
+  j["InstrumentID"] = pTrade->InstrumentID;
+  j["OrderSysID"] = pTrade->OrderSysID;
+  j["TradeID"] = pTrade->TradeID;
+  _rc->publish(chCtpOnRtnTrade, j.dump());
 }
 
 void Trade::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder,
                                 CThostFtdcRspInfoField *pRspInfo) {
   if (pRspInfo != nullptr && pRspInfo->ErrorID != 0) {
-    SPDLOG_ERROR("code={}, msg={} ", pRspInfo->ErrorID,
-                 EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg)));
+    auto msg = EncodeUtf8("GBK", std::string(pRspInfo->ErrorMsg));
+    SPDLOG_ERROR("code={}, msg={} ", pRspInfo->ErrorID, msg);
+    nlohmann::json j;
+    j["Date"] = Date();
+    j["RequestId"] = pInputOrder->RequestID;
+    j["Error"] = msg;
+    _rc->publish(chCtpOnErrOrderInsert, j.dump());
     return;
   }
-  SPDLOG_INFO("{}", pInputOrder->OrderRef);
 }
 
 void Trade::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderAction,
@@ -227,13 +258,29 @@ void Trade::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderAction,
   SPDLOG_ERROR("{}", pOrderAction->OrderSysID);
 }
 
-void Trade::_heartbeat() {
+void Trade::_daemon() {
   postTask([this]() {
     while (true) {
       if (this->_isConnect.load()) {
-        _rc->publish(chCtpTradeHeartbeat, "");
+        _rc->publish(chCtpHeartbeat, "");
       }
       std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+  });
+
+  postTask([this]() {
+    auto ch = this->_rc->subscriber();
+    ch.subscribe(chCtpOrder);
+    ch.on_message([this](std::string channel, std::string msg) {
+      if (channel != chCtpOrder) return;
+      this->_order(msg);
+    });
+    while (true) {
+      try {
+        ch.consume();
+      } catch (std::exception &e) {
+        SPDLOG_ERROR("{}", e.what());
+      }
     }
   });
 }
@@ -289,6 +336,7 @@ void Trade::_confirmSettlementInfo() {
 }
 
 void Trade::_order(std::string str) {
+  SPDLOG_INFO("{}", str);
   auto req = CThostFtdcInputOrderField{
       .TimeCondition = THOST_FTDC_TC_IOC,
       .ContingentCondition = THOST_FTDC_CC_Immediately,
@@ -296,22 +344,27 @@ void Trade::_order(std::string str) {
   req.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
   strcpy(req.BrokerID, _brokerId.c_str());
   strcpy(req.InvestorID, _investorId.c_str());
+  int requestId = 0;
   try {
     auto j = nlohmann::json::parse(str);
-    j.at("instrumentId").get_to(req.InstrumentID);
-    j.at("direction").get_to(req.Direction);
-    j.at("offset").get_to(req.CombOffsetFlag[0]);
-    j.at("volume").get_to(req.VolumeTotalOriginal);
-    j.at("price").get_to(req.LimitPrice);
-    if (req.LimitPrice == 0) {
+    j.at("RequestId").get_to(requestId);
+    if (requestId == 0) {
+      throw "zero request id";
+    }
+    strcpy(req.InstrumentID, j.at("InstrumentId").get<std::string>().c_str());
+    req.Direction = j.at("Direction").get<std::string>()[0];
+    req.CombOffsetFlag[0] = j.at("Offset").get<std::string>().c_str()[0];
+    j.at("Volume").get_to(req.VolumeTotalOriginal);
+    double price = j.at("Price").get<double>();
+    if (price == 0) {
       req.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
       req.TimeCondition = THOST_FTDC_TC_IOC;
     } else {
+      req.LimitPrice = price;
       req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
       req.TimeCondition = THOST_FTDC_TC_GFD;
     }
-    std::string mode;
-    j.at("mode").get_to(mode);
+    std::string mode = j.at("Mode").get<std::string>();
     if (mode == "FAK") {
       req.VolumeCondition = THOST_FTDC_VC_AV;
     } else if (mode == "FOK") {
@@ -321,7 +374,7 @@ void Trade::_order(std::string str) {
     SPDLOG_ERROR("{}", e.what());
     return;
   }
-  if (int ret = _tdApi->ReqOrderInsert(&req, _getRequestId()); ret != 0) {
+  if (int ret = _tdApi->ReqOrderInsert(&req, requestId); ret != 0) {
     SPDLOG_ERROR("ret={}", ret);
   }
 }

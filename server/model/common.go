@@ -75,3 +75,12 @@ func Publish[T any](ctx context.Context, ch string, data *T) (err error) {
 
 	return
 }
+
+func NewFromJson[T any](str string) (c *T, err error) {
+	c = new(T)
+	err = json.Unmarshal([]byte(str), c)
+	if err != nil {
+		logger.L().Error("unmarshal failed", zap.String("msg", str), zap.Error(err))
+	}
+	return
+}

@@ -15,10 +15,16 @@ var (
 )
 
 func RunApi() error {
-	r := gin.Default()
-	r.POST("ctp/order", ctpOrder)
+	gin.SetMode(gin.DebugMode)
+	r := gin.New()
+	r.Use(ginLog(), gin.Recovery())
+	r.SetTrustedProxies([]string{"0.0.0.0/0", "::/0"})
+	ctp := r.Group("ctp").Use()
+	{
+		ctp.POST("order", ctpOrder)
+	}
 
-	srv.Addr = ":80"
+	srv.Addr = ":8888"
 	srv.Handler = r
 	err := srv.ListenAndServe()
 	if err != nil {

@@ -66,7 +66,7 @@ class Trade final : public CThostFtdcTraderSpi {
   int _maxOrderRef;
   int _tradingDay;
 
-  void _heartbeat();
+  void _daemon();
   int _getRequestId();
   void _login();
   void _querySettlementInfo();

@@ -1,14 +1,8 @@
 package model
 
-import (
-	"encoding/json"
-
-	"go.uber.org/zap"
-
-	"github.com/rickywei/wallstreetsheep/logger"
-)
-
 type CtpInstrument struct {
+	CreatedAt              int64    `gorm:"column:CreatedAt"`
+	UpdatedAt              int64    `gorm:"column:UpdatedAt"`
 	ExchangeID             *string  `gorm:"column:ExchangeID"`
 	InstrumentName         *string  `gorm:"column:InstrumentName"`
 	ProductClass           *string  `gorm:"column:ProductClass"`
@@ -46,11 +40,45 @@ func (c *CtpInstrument) TableName() string {
 	return "CtpInstrument"
 }
 
-func NewCtpInstrument(str string) (c *CtpInstrument, err error) {
-	c = &CtpInstrument{}
-	err = json.Unmarshal([]byte(str), c)
-	if err != nil {
-		logger.L().Error("unmarshal ctp failed", zap.String("msg", str), zap.Error(err))
-	}
-	return
+type CtpOrderReq struct {
+	ExchangeId   *string `json:"ExchangeId" gorm:"column:ExchangeId"`
+	InstrumentId *string `json:"InstrumentId" gorm:"column:InstrumentId"`
+	// '0' buy '1' sell
+	Direction *string `json:"Direction" gorm:"column:Direction"`
+	// '0' open '1' close
+	Offset *string  `json:"Offset" gorm:"column:Offset"`
+	Price  *float64 `json:"Price" gorm:"column:Price"`
+	Volume *int     `json:"Volume" gorm:"column:Volume"`
+	// FAK FOK
+	Mode *string `json:"Mode" gorm:"column:Mode"`
+}
+
+type CtpOrder struct {
+	*CtpOrderReq
+	CreatedAt  int64   `json:"CreatedAt" gorm:"column:CreatedAt"`
+	UpdatedAt  int64   `json:"UpdatedAt" gorm:"column:UpdatedAt"`
+	Date       *string `json:"Date" gorm:"column:Date"`
+	RequestId  *int    `json:"RequestId" gorm:"column:RequestId"`
+	OrderSysId *string `json:"OrderSysId" gorm:"column:OrderSysId"`
+	Error      *string `json:"Error" gorm:"column:Error"`
+}
+
+func (c *CtpOrder) TableName() string {
+	return "CtpOrder"
+}
+
+type CtpTrade struct {
+	CreatedAt    int64    `gorm:"column:CreatedAt"`
+	UpdatedAt    int64    `gorm:"column:UpdatedAt"`
+	ExchangeId   *string  `gorm:"column:ExchangeId"`
+	InstrumentId *string  `gorm:"column:InstrumentId"`
+	OrderSysId   *string  `gorm:"column:OrderSysId"`
+	TradeId      *string  `gorm:"column:TradeId"`
+	Price        *float64 `gorm:"column:Price"`
+	Volume       *int     `gorm:"column:Volume"`
+	Error        *string  `gorm:"column:Error"`
+}
+
+func (c *CtpTrade) TableName() string {
+	return "CtpTrade"
 }

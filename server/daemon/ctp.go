@@ -15,22 +15,28 @@ import (
 )
 
 const (
-	chCtpHeartbeat  = "ctpHeartbeat"
-	chCtpInstrument = "ctpInstrument"
-	chCtpOnTrade    = "ctpOnTrade"
+	chCtpHeartbeat        = "chCtpHeartbeat"
+	chCtpInstrument       = "chCtpInstrument"
+	chCtpOnRspOrderInsert = "chCtpOnRspOrderInsert"
+	chCtpOnErrOrderInsert = "chCtpOnErrOrderInsert"
+	chCtpOnRtnOrder       = "chCtpOnRtnOrder"
+	chCtpOnRtnTrade       = "chCtpOnRtnTrade"
+	kI2E                  = "ctpI2E"
 )
 
 var (
 	ctx, cancel = context.WithCancel(context.Background())
+	pid         *os.Process
 )
 
 func RunCtp() error {
-	ps := model.RC.Subscribe(ctx, chCtpHeartbeat)
+	var err error
+	ps := model.RC.Subscribe(ctx, chCtpHeartbeat, chCtpOnRspOrderInsert, chCtpOnErrOrderInsert, chCtpOnRtnOrder, chCtpOnRtnTrade)
 	defer ps.Close()
 	ch := ps.Channel()
 	d := time.Second * 3
 	tk := time.NewTicker(d)
-	pid, err := os.StartProcess(conf.String("ctp.bin"), []string{marshalCtpConf()}, &os.ProcAttr{
+	pid, err = os.StartProcess(conf.String("ctp.bin"), []string{marshalCtpConf()}, &os.ProcAttr{
 		Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
 	})
 	if err != nil {
@@ -43,15 +49,37 @@ func RunCtp() error {
 			case chCtpHeartbeat:
 				tk.Reset(d)
 			case chCtpInstrument:
-				ct, err := model.NewCtpInstrument(msg.Payload)
+				data, err := model.NewFromJson[model.CtpInstrument](msg.Payload)
 				if err != nil {
 					continue
 				}
-				model.WriteDb(ctx, ct)
-			case chCtpOnTrade:
+				model.WriteDb(ctx, data)
+			case chCtpOnRspOrderInsert:
+				data, err := model.NewFromJson[model.CtpOrder](msg.Payload)
+				if err != nil {
+					continue
+				}
+				if err = model.DB.Where(`"Date"=? AND "RequestId"=?`, data.Date, data.RequestId).Select("Error").Updates(data).Error; err != nil {
+					logger.L().Error("chCtpOnRspOrderInsert failed", zap.Error(err))
+				}
+			case chCtpOnRtnOrder:
+				data, err := model.NewFromJson[model.CtpOrder](msg.Payload)
+				if err != nil {
+					continue
+				}
+				if err = model.DB.Where(`"Date"=? AND "RequestId"=?`, data.Date, data.RequestId).Select("Status", "OrderSysID").Updates(data).Error; err != nil {
+					logger.L().Error("chCtpOnRtnOrder failed", zap.Error(err))
+				}
+			case chCtpOnRtnTrade:
+				data, err := model.NewFromJson[model.CtpTrade](msg.Payload)
+				if err != nil {
+					continue
+				}
+				model.WriteDb(ctx, data)
 			}
 		case <-tk.C:
 			logger.L().Error("heartbeat more than 3 seconds")
+			continue
 			pid.Kill()
 			if pid, err = os.StartProcess(conf.String("ctp.bin"), []string{marshalCtpConf()}, &os.ProcAttr{
 				Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
@@ -66,6 +94,7 @@ func RunCtp() error {
 
 func StopCtp() {
 	defer cancel()
+	defer pid.Kill()
 }
 
 func marshalCtpConf() string {
