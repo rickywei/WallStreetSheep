@@ -29,13 +29,14 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(
   ${PROJECT_NAME}
   PUBLIC ${PROJECT_SOURCE_DIR}/ctp_v6.7.2/libthosttraderapi_se.so
+  PUBLIC ${PROJECT_SOURCE_DIR}/ctp_v6.7.2/libthostmduserapi_se.so
   PUBLIC nlohmann_json::nlohmann_json
   PUBLIC spdlog::spdlog
   PUBLIC ICU::data
   PUBLIC ICU::uc
   PUBLIC ICU::i18n
   PUBLIC ICU::io
-  # PUBLIC range-v3::range-v3
+  PUBLIC range-v3::range-v3
   PUBLIC redis++::redis++
   PUBLIC hiredis::hiredis
 )

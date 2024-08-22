@@ -8,12 +8,13 @@ import (
 	"reflect"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/rickywei/wallstreetsheep/conf"
-	"github.com/rickywei/wallstreetsheep/logger"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/rickywei/wallstreetsheep/conf"
+	"github.com/rickywei/wallstreetsheep/logger"
 )
 
 var (

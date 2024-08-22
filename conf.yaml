@@ -1,0 +1,38 @@
+log:
+  level: debug
+  console: true
+
+redis:
+  addr:
+    - 127.0.0.1:6379
+
+postgres:
+  host: "127.0.0.1"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  dbname: "WallStreetSheep"
+
+ctp:
+  trade: true
+  market: true
+  bin: "../build/WallStreetSheepCtp"
+  frontAddr: tcp://180.168.146.187:10201
+  # frontAddr: tcp://180.168.146.187:10130
+  brokerId: "9999"
+  investorId: ""
+  password: ""
+  flowPath: "../build/flow"
+  isUsingUdp: false
+  isMulticast: false
+  redisAddr: tcp://127.0.0.1:6379
+  feishu:
+    orderInsert:
+      url: https://
+      bearer: 
+    orderUpdate:
+      url: https://
+      bearer: 
+    tradeInsert:
+      url: https://
+      bearer: 

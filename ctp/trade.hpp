@@ -33,26 +33,26 @@ class Trade final : public CThostFtdcTraderSpi {
       CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm,
       CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
   virtual void OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument,
-                          CThostFtdcRspInfoField *pRspInfo, int nRequestID,
-                          bool bIsLast) override;
+                                  CThostFtdcRspInfoField *pRspInfo,
+                                  int nRequestID, bool bIsLast) override;
   virtual void OnRspQryInvestorPosition(
       CThostFtdcInvestorPositionField *pInvestorPosition,
       CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
   virtual void OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder,
                                 CThostFtdcRspInfoField *pRspInfo,
                                 int nRequestID, bool bIsLast) override;
+  virtual void OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder,
+                                   CThostFtdcRspInfoField *pRspInfo) override;
+  virtual void OnRtnOrder(CThostFtdcOrderField *pOrder) override;
+  virtual void OnRtnTrade(CThostFtdcTradeField *pTrade) override;
   virtual void OnRspOrderAction(
       CThostFtdcInputOrderActionField *pInputOrderAction,
       CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) override;
-  virtual void OnRtnOrder(CThostFtdcOrderField *pOrder) override;
-  virtual void OnRtnTrade(CThostFtdcTradeField *pTrade) override;
-  virtual void OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder,
-                                   CThostFtdcRspInfoField *pRspInfo) override;
   virtual void OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderAction,
                                    CThostFtdcRspInfoField *pRspInfo) override;
 
  private:
-  std::atomic_bool _isConnect = false;
+  std::atomic_bool _isLogin = false;
   std::string _frontAddr;
   std::string _brokerId;
   std::string _investorId;
@@ -64,7 +64,6 @@ class Trade final : public CThostFtdcTraderSpi {
   int _frontId;
   int _sessionId;
   int _maxOrderRef;
-  int _tradingDay;
 
   void _daemon();
   int _getRequestId();
@@ -74,7 +73,7 @@ class Trade final : public CThostFtdcTraderSpi {
   void _queryInstrument();
   void _queryInvestorPosition();
   void _order(std::string str);
-  void _cancelOrder(std::string str);
+  void _cancel(std::string str);
 };
 
 }  // namespace wss

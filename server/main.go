@@ -34,6 +34,13 @@ func main() {
 	}
 	{
 		rg.Add(func() error {
+			return daemon.RunFeishu()
+		}, func(err error) {
+			daemon.StopFeishu()
+		})
+	}
+	{
+		rg.Add(func() error {
 			return api.RunApi()
 		}, func(err error) {
 			api.StopApi()

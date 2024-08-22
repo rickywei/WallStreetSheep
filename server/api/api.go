@@ -22,13 +22,14 @@ func RunApi() error {
 	ctp := r.Group("ctp").Use()
 	{
 		ctp.POST("order", ctpOrder)
+		ctp.POST("cancel", ctpCancel)
 	}
 
 	srv.Addr = ":8888"
 	srv.Handler = r
 	err := srv.ListenAndServe()
 	if err != nil {
-		logger.L().Fatal("start http failed", zap.Error(err))
+		logger.L().Fatal("http listen failed", zap.Error(err))
 	}
 	return err
 }
